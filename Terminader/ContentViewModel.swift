@@ -38,6 +38,13 @@ class ContentViewModel: ObservableObject {
     @Published var stderrConsole: [CLIOutput] = []
     
     var currentDirectory: File { navigationHistory[currentDirectoryIndex] }
+    var availableSpace: Measurement<UnitInformationStorage>? {
+        if let dictionary = try? FileManager.default.attributesOfFileSystem(forPath: currentDirectory.url.path),
+           let freeSize = dictionary[FileAttributeKey.systemFreeSize] as? NSNumber {
+            return Measurement(value: freeSize.doubleValue, unit: .bytes)
+        }
+        return nil
+    }
     
     init() {
         self.navigationHistory = [ File(url: FileManager.default.homeDirectoryForCurrentUser) ]
