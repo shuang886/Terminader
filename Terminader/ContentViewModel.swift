@@ -230,42 +230,46 @@ extension URL {
 }
 
 extension String {
-    func matchesWildcard(_ p: String) -> Bool {
-        let s = self
+    func matchesWildcard(_ pattern: String) -> Bool {
+        // Translated from https://www.geeksforgeeks.org/wildcard-pattern-matching/
+        // Variable names kept to match source
         
-        var sIdx = s.startIndex
-        var pIdx = p.startIndex
-        var lastWildcardIdx: String.Index?
-        var sBacktrackIdx: String.Index?
-        var nextToWildcardIdx: String.Index?
+        let text = self
+        let n = text.endIndex
+        let m = pattern.endIndex
+        var startIndex: String.Index?
+        var i = text.startIndex
+        var j = pattern.startIndex
+        var match = text.startIndex
         
-        while sIdx != s.endIndex {
-            if pIdx < p.endIndex && (p[pIdx] == "?" || p[pIdx] == s[sIdx]) {
-                // characters match
-                sIdx = s.index(after: sIdx)
-                pIdx = p.index(after: pIdx)
+        while i < n {
+            if j < m && (pattern[j] == "?" || pattern[j] == text[i]) {
+                // Characters match or '?' in pattern matches any character.
+                i = text.index(after: i)
+                j = pattern.index(after: j)
             }
-            else if pIdx < p.endIndex && p[pIdx] == "*" {
-                // wildcard
-                lastWildcardIdx = pIdx
-                pIdx = p.index(after: pIdx)
-                nextToWildcardIdx = pIdx
-                sBacktrackIdx = sIdx
+            else if j < m && pattern[j] == "*" {
+                // Wildcard character '*', mark the current position in the pattern and the text as a proper match.
+                startIndex = j
+                match = i
+                j = pattern.index(after: j)
             }
-            else if lastWildcardIdx == nil {
-                return false
+            else if let startIndex {
+                // No match, but a previous wildcard was found. Backtrack to the last '*' character position and try for a different match.
+                j = pattern.index(after: startIndex)
+                match = text.index(after: match)
+                i = match
             }
             else {
-                pIdx = nextToWildcardIdx!
-                sBacktrackIdx = s.index(after: sBacktrackIdx!)
-                sIdx = sBacktrackIdx!
-            }
-        }
-        while pIdx < p.endIndex {
-            if p[pIdx] != "*" {
+                // If none of the above cases comply, the pattern does not match.
                 return false
             }
         }
-        return true
+        
+        // Consume any remaining '*' characters in the given pattern.
+        while j < m && pattern[j] == "*" {
+            j = pattern.index(after: j)
+        }
+        return j == m
     }
 }
