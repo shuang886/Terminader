@@ -53,7 +53,7 @@ struct CLIDetailView: View {
     
     var body: some View {
         VStack(spacing: 0) {
-            HStack {
+            HStack(spacing: 8) {
                 Button {
                     command = command.trimmingCharacters(in: .whitespaces)
                     for file in model.selectedFiles {
@@ -62,7 +62,6 @@ struct CLIDetailView: View {
                 } label: {
                     Image(systemName: "arrow.down.doc")
                 }
-                .padding(.horizontal, 4)
                 .buttonStyle(.bordered)
                 .disabled(model.selectedFiles.isEmpty)
                 .overlay {
@@ -88,8 +87,8 @@ struct CLIDetailView: View {
                 .labelsHidden()
                 .clipped()
             }
-            .padding(4)
-
+            .padding(8)
+            
             switch selectedPane {
             case .console:
                 ConsoleView(command: $command, console: $model.stdoutConsole)
