@@ -51,6 +51,7 @@ struct ContentView: View {
                     Image(systemName: "chevron.left")
                 }
                 .disabled(!model.canGoBack())
+                .help("See folders you viewed previously")
             }
             
             ToolbarItem(placement: .navigation) {
@@ -77,6 +78,7 @@ struct ContentView: View {
                 } label: {
                     Image(systemName: isGUI ? "terminal" : "macwindow")
                 }
+                .help(isGUI ? "Switch to Terminal" : "Switch to graphical interface")
             }
         }
         .navigationTitle("")

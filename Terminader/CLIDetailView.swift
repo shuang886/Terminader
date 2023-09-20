@@ -72,6 +72,7 @@ struct CLIDetailView: View {
                             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topTrailing)
                     }
                 }
+                .help("Paste selected items")
                 
                 Picker("", selection: $selectedPane, content: {
                     ForEach(CLIPane.allCases, content: { pane in
