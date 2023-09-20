@@ -26,6 +26,7 @@ class ContentViewModel: ObservableObject {
     @Published var iconSize: CGFloat = 72
     @Published var navigationHistory: [File]
     @Published var selectedFiles: Set<File> = []
+    @Published var console: AttributedString = ""
     
     var currentDirectory: File { navigationHistory[currentDirectoryIndex] }
 
@@ -80,6 +81,10 @@ class ContentViewModel: ObservableObject {
         else {
             selectedFiles = [file]
         }
+    }
+    
+    func run(_ command: String) {
+        console += AttributedString(command)
     }
     
     private func populateCurrentDirectoryFiles() {
