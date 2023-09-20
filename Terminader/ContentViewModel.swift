@@ -8,7 +8,7 @@
 import SwiftUI
 
 struct File: Identifiable, Codable, Hashable {
-    let id = UUID()
+    var id = UUID()
     let url: URL
     var name: String { url.localizedName ?? url.lastPathComponent }
     var icon: (String, Color?) { (url.isDirectory ?? false) ? ("folder.fill", .cyan) : ("doc", nil) }
@@ -101,6 +101,10 @@ class ContentViewModel: ObservableObject {
         else {
             selectedFiles = [file]
         }
+    }
+    
+    func deselect(_ file: File) {
+        selectedFiles.remove(file)
     }
     
     func run(prompt: String, command: String) {

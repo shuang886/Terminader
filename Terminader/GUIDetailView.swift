@@ -38,12 +38,23 @@ struct GUIDetailView: View {
                         .gesture(TapGesture(count: 2).onEnded {
                             model.open(file)
                         })
-                        .simultaneousGesture(TapGesture().onEnded {
+                        .simultaneousGesture(TapGesture().modifiers(.command).onEnded {
+                            if model.selectedFiles.contains(file) {
+                                model.deselect(file)
+                            }
+                            else {
+                                model.select(file, add: true)
+                            }
+                        })
+                        .gesture(TapGesture().onEnded {
                             model.select(file)
                         })
                         .contextMenu {
                             Button("Get Info") {
-                                openWindow(value: file)
+                                model.select(file)
+                                for file in model.selectedFiles {
+                                    openWindow(value: file)
+                                }
                             }
                         }
                     }

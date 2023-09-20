@@ -47,24 +47,38 @@ class CLITextOutput: CLIOutput {
 struct CLIDetailView: View {
     @EnvironmentObject private var model: ContentViewModel
     @State private var selectedPane = CLIPane.console
+    @State private var command = ""
     
     var body: some View {
         VStack(spacing: 0) {
-            Picker("", selection: $selectedPane, content: {
-                ForEach(CLIPane.allCases, content: { pane in
-                    Text(pane.localizedString)
+            HStack {
+                Button {
+                    command = command.trimmingCharacters(in: .whitespaces)
+                    for file in model.selectedFiles {
+                        command += " " + file.url.path
+                    }
+                } label: {
+                    Image(systemName: "arrow.down.doc")
+                }
+                .buttonStyle(.bordered)
+                .disabled(model.selectedFiles.isEmpty)
+                
+                Picker("", selection: $selectedPane, content: {
+                    ForEach(CLIPane.allCases, content: { pane in
+                        Text(pane.localizedString)
+                    })
                 })
-            })
-            .pickerStyle(.segmented)
-            .labelsHidden()
-            .clipped()
+                .pickerStyle(.segmented)
+                .labelsHidden()
+                .clipped()
+            }
             .padding(4)
-            
+
             switch selectedPane {
             case .console:
-                ConsoleView(console: $model.stdoutConsole)
+                ConsoleView(command: $command, console: $model.stdoutConsole)
             case .errors:
-                ConsoleView(console: $model.stderrConsole, isStderr: true)
+                ConsoleView(command: $command, console: $model.stderrConsole, isStderr: true)
             }
         }
     }
@@ -72,7 +86,7 @@ struct CLIDetailView: View {
 
 struct ConsoleView: View {
     @EnvironmentObject private var model: ContentViewModel
-    @State private var command: String = ""
+    @Binding var command: String
     @FocusState private var isFocused: Bool
     @Binding var console: [CLIOutput]
     var isStderr = false
@@ -99,7 +113,6 @@ struct ConsoleView: View {
                         
                         if let textItem = consoleItem as? CLITextOutput {
                             VStack {
-                                
                                 Text(textItem.prompt)
                                     .frame(maxWidth: .infinity, alignment: .leading)
                                     .padding(.top, 2)
