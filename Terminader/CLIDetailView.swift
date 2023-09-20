@@ -50,6 +50,8 @@ struct CLIDetailView: View {
     @EnvironmentObject private var model: ContentViewModel
     @State private var selectedPane = CLIPane.console
     @State private var command = ""
+    @State private var badgeScale = 1.0
+    @State private var badgeColor = Color.clear
     
     var body: some View {
         VStack(spacing: 0) {
@@ -65,15 +67,42 @@ struct CLIDetailView: View {
                 .buttonStyle(.bordered)
                 .disabled(model.selectedFiles.isEmpty)
                 .overlay {
+                    let badgeAnimation = {
+                        badgeScale = 2
+                        badgeColor = .red
+                        withAnimation(Animation.easeOut(duration: 0.5)) {
+                            badgeScale = 1
+                            badgeColor = Color(NSColor.controlTextColor)
+                        }
+                    }
+                    
                     if 1...50 ~= model.selectedFiles.count {
                         Image(systemName: "\(model.selectedFiles.count).circle.fill")
                             .imageScale(.small)
                             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topTrailing)
+                            .scaleEffect(badgeScale)
+                            .foregroundColor(Color.white)
+                            .colorMultiply(badgeColor)
+                            .onAppear {
+                                badgeAnimation()
+                            }
+                            .onChange(of: model.selectedFiles) { _ in
+                                badgeAnimation()
+                            }
                     }
                     else if model.selectedFiles.count > 50 {
                         Image(systemName: "plus.circle.fill")
                             .imageScale(.small)
                             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topTrailing)
+                            .scaleEffect(badgeScale)
+                            .foregroundColor(Color.white)
+                            .colorMultiply(badgeColor)
+                            .onAppear {
+                                badgeAnimation()
+                            }
+                            .onChange(of: model.selectedFiles) { _ in
+                                badgeAnimation()
+                            }
                     }
                 }
                 .help("Paste selected items")

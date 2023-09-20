@@ -115,6 +115,8 @@ class ContentViewModel: ObservableObject {
         switch commandParts[0] {
         case "cd":
             chdir(commandParts)
+        case "select":
+            select(commandParts)
         default:
             let task = Process()
             let stdoutPipe = Pipe()
@@ -175,6 +177,16 @@ class ContentViewModel: ObservableObject {
         }
     }
     
+    private func select(_ commandParts: [String]) {
+        for part in commandParts.dropFirst(1) where !part.isEmpty {
+            for currentDirectoryFile in currentDirectoryFiles {
+                if currentDirectoryFile.url.lastPathComponent.matchesWildcard(part) {
+                    selectedFiles.insert(currentDirectoryFile)
+                }
+            }
+        }
+    }
+    
     private func currentDirectoryDidChange() {
         do {
             // list the files in the new current directory
@@ -203,4 +215,45 @@ extension URL {
     var isDirectory: Bool? { (try? resourceValues(forKeys: [.isDirectoryKey]))?.isDirectory }
     var localizedName: String? { (try? resourceValues(forKeys: [.localizedNameKey]))?.localizedName }
     var typeIdentifier: String? { (try? resourceValues(forKeys: [.typeIdentifierKey]))?.typeIdentifier }
+}
+
+extension String {
+    func matchesWildcard(_ p: String) -> Bool {
+        let s = self
+        
+        var sIdx = s.startIndex
+        var pIdx = p.startIndex
+        var lastWildcardIdx: String.Index?
+        var sBacktrackIdx: String.Index?
+        var nextToWildcardIdx: String.Index?
+        
+        while sIdx != s.endIndex {
+            if pIdx < p.endIndex && (p[pIdx] == "?" || p[pIdx] == s[sIdx]) {
+                // characters match
+                sIdx = s.index(after: sIdx)
+                pIdx = p.index(after: pIdx)
+            }
+            else if pIdx < p.endIndex && p[pIdx] == "*" {
+                // wildcard
+                lastWildcardIdx = pIdx
+                pIdx = p.index(after: pIdx)
+                nextToWildcardIdx = pIdx
+                sBacktrackIdx = sIdx
+            }
+            else if lastWildcardIdx == nil {
+                return false
+            }
+            else {
+                pIdx = nextToWildcardIdx!
+                sBacktrackIdx = s.index(after: sBacktrackIdx!)
+                sIdx = sBacktrackIdx!
+            }
+        }
+        while pIdx < p.endIndex {
+            if p[pIdx] != "*" {
+                return false
+            }
+        }
+        return true
+    }
 }
