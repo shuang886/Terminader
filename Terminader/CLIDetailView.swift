@@ -66,8 +66,13 @@ struct CLIDetailView: View {
                 .buttonStyle(.bordered)
                 .disabled(model.selectedFiles.isEmpty)
                 .overlay {
-                    if model.selectedFiles.count > 0 {
+                    if 1...50 ~= model.selectedFiles.count {
                         Image(systemName: "\(model.selectedFiles.count).circle.fill")
+                            .imageScale(.small)
+                            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topTrailing)
+                    }
+                    else if model.selectedFiles.count > 50 {
+                        Image(systemName: "plus.circle.fill")
                             .imageScale(.small)
                             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topTrailing)
                     }
