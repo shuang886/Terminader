@@ -64,7 +64,15 @@ struct GUIDetailView: View {
             }
             HStack {
                 Spacer()
-                let filesCount = model.currentDirectoryFiles.count.formatted()
+                let files: String = {
+                    let filesCount = model.currentDirectoryFiles.count.formatted()
+                    if model.selectedFiles.isEmpty {
+                        return "\(filesCount) item(s)"
+                    }
+                    else {
+                        return "\(model.selectedFiles.count) of \(filesCount) selected"
+                    }
+                }()
                 let availableSpace: String = {
                     if let space = model.availableSpace {
                         let formatter = MeasurementFormatter()
@@ -74,7 +82,7 @@ struct GUIDetailView: View {
                     }
                     return ""
                 }()
-                Text("\(filesCount) item(s)\(availableSpace)")
+                Text(files + availableSpace)
                     .frame(alignment: .center)
                 Spacer()
                 Slider(value: $model.iconSize, in: 32...512)
