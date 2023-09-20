@@ -34,8 +34,8 @@ class ContentViewModel: ObservableObject {
             }
         }
     }
-    @Published var stdoutConsole: AttributedString = ""
-    @Published var stderrConsole: AttributedString = ""
+    @Published var stdoutConsole: [CLIOutput] = []
+    @Published var stderrConsole: [CLIOutput] = []
     
     var currentDirectory: File { navigationHistory[currentDirectoryIndex] }
     
@@ -97,9 +97,7 @@ class ContentViewModel: ObservableObject {
     }
     
     func run(prompt: String, command: String) {
-        var promptAttr = AttributedString("\n" + prompt)
-        promptAttr.foregroundColor = .green
-        stdoutConsole += promptAttr + AttributedString(command)
+        let promptCommand = prompt + command.trimmingCharacters(in: .newlines)
         
         // FIXME: need to handle quotes and backslash escapes
         let commandParts = command.components(separatedBy: .whitespacesAndNewlines)
@@ -121,11 +119,17 @@ class ContentViewModel: ObservableObject {
             
             let stdoutData = stdoutPipe.fileHandleForReading.readDataToEndOfFile()
             let stdoutString = String(data: stdoutData, encoding: .utf8)!.trimmingCharacters(in: .newlines)
-            stdoutConsole += AttributedString(stdoutString)
+            stdoutConsole.append(CLITextOutput(prompt: promptCommand,
+                                               terminationStatus: task.terminationStatus,
+                                               text: AttributedString(stdoutString)))
             
             let stderrData = stderrPipe.fileHandleForReading.readDataToEndOfFile()
             let stderrString = String(data: stderrData, encoding: .utf8)!.trimmingCharacters(in: .newlines)
-            stderrConsole += AttributedString(stderrString)
+            if !stderrString.isEmpty {
+                stderrConsole.append(CLITextOutput(prompt: promptCommand,
+                                                   terminationStatus: task.terminationStatus,
+                                                   text: AttributedString(stderrString)))
+            }
         }
     }
     

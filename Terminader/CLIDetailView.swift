@@ -20,6 +20,30 @@ enum CLIPane: CaseIterable, Identifiable {
     }
 }
 
+class CLIOutput: Identifiable, Equatable {
+    let id = UUID()
+    var prompt: String = ""
+    var terminationStatus: Int32 = 0
+    
+    init(prompt: String, terminationStatus: Int32) {
+        self.prompt = prompt
+        self.terminationStatus = terminationStatus
+    }
+    
+    static func == (lhs: CLIOutput, rhs: CLIOutput) -> Bool {
+        lhs.id == rhs.id
+    }
+}
+
+class CLITextOutput: CLIOutput {
+    var text: AttributedString
+    
+    init(prompt: String, terminationStatus: Int32, text: AttributedString) {
+        self.text = text
+        super.init(prompt: prompt, terminationStatus: terminationStatus)
+    }
+}
+
 struct CLIDetailView: View {
     @EnvironmentObject private var model: ContentViewModel
     @State private var selectedPane = CLIPane.console
@@ -40,7 +64,7 @@ struct CLIDetailView: View {
             case .console:
                 ConsoleView(console: $model.stdoutConsole)
             case .errors:
-                ConsoleView(console: $model.stderrConsole)
+                ConsoleView(console: $model.stderrConsole, isStderr: true)
             }
         }
     }
@@ -50,7 +74,8 @@ struct ConsoleView: View {
     @EnvironmentObject private var model: ContentViewModel
     @State private var command: String = ""
     @FocusState private var isFocused: Bool
-    @Binding var console: AttributedString
+    @Binding var console: [CLIOutput]
+    var isStderr = false
     
     private let terminalFont = Font.system(size: 12).monospaced()
     @Namespace private var bottomID
@@ -59,16 +84,46 @@ struct ConsoleView: View {
         ScrollViewReader { proxy in
             VStack(spacing: 0) {
                 ScrollView {
-                    Text(console)
-                        .lineLimit(nil)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .font(terminalFont)
-                        .textSelection(.enabled)
-                        .onChange(of: console) { _ in
-                            DispatchQueue.main.async {
-                                proxy.scrollTo(bottomID)
+                    ForEach(console) { consoleItem in
+                        let color: Color = {
+                            if isStderr {
+                                return Color.orange
                             }
+                            else if consoleItem.terminationStatus != 0 {
+                                return Color.red
+                            }
+                            else {
+                                return Color.cyan
+                            }
+                        }()
+                        
+                        if let textItem = consoleItem as? CLITextOutput {
+                            VStack {
+                                
+                                Text(textItem.prompt)
+                                    .frame(maxWidth: .infinity, alignment: .leading)
+                                    .padding(.top, 2)
+                                    .padding(.horizontal, 4)
+                                    .foregroundColor(Color(NSColor.textBackgroundColor))
+                                    .background(Rectangle().fill(color))
+                                Text(textItem.text)
+                                    .lineLimit(nil)
+                                    .frame(maxWidth: .infinity, alignment: .leading)
+                                    .font(terminalFont)
+                                    .textSelection(.enabled)
+                                    .onChange(of: console) { _ in
+                                        DispatchQueue.main.async {
+                                            proxy.scrollTo(bottomID)
+                                        }
+                                    }
+                                    .padding(.horizontal, 4)
+                                    .padding(.bottom, 2)
+                            }
+                            .background(RoundedRectangle(cornerRadius: 8).stroke(color))
+                            .clipShape(RoundedRectangle(cornerRadius: 8))
+                            .padding(.vertical, 1)
                         }
+                    }
                     
                     Text("")
                         .frame(height: 0)
