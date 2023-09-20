@@ -69,7 +69,7 @@ struct CLIDetailView: View {
                 .overlay {
                     let badgeAnimation = {
                         badgeScale = 2
-                        badgeColor = .red
+                        badgeColor = .orange
                         withAnimation(Animation.easeOut(duration: 0.5)) {
                             badgeScale = 1
                             badgeColor = Color(NSColor.controlTextColor)

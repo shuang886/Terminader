@@ -117,6 +117,8 @@ class ContentViewModel: ObservableObject {
             chdir(commandParts)
         case "select":
             select(commandParts)
+        case "deselect":
+            deselect(commandParts)
         default:
             let task = Process()
             let stdoutPipe = Pipe()
@@ -182,6 +184,16 @@ class ContentViewModel: ObservableObject {
             for currentDirectoryFile in currentDirectoryFiles {
                 if currentDirectoryFile.url.lastPathComponent.matchesWildcard(part) {
                     selectedFiles.insert(currentDirectoryFile)
+                }
+            }
+        }
+    }
+    
+    private func deselect(_ commandParts: [String]) {
+        for part in commandParts.dropFirst(1) where !part.isEmpty {
+            for currentDirectoryFile in currentDirectoryFiles {
+                if currentDirectoryFile.url.lastPathComponent.matchesWildcard(part) {
+                    selectedFiles.remove(currentDirectoryFile)
                 }
             }
         }
