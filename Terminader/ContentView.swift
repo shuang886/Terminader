@@ -62,6 +62,15 @@ struct ContentView: View {
                 .disabled(!model.canGoForward())
             }
             
+            ToolbarItem(placement: .navigation) {
+                Picker("", selection: $model.selectedPathComponent) {
+                    ForEach(0..<model.pathComponentsArray.count, id: \.self) { index in
+                        // HACK: the trailing space prevents the picker from truncating the item
+                        Text(model.pathComponentsArray[index].name + " ")
+                    }
+                }
+            }
+            
             ToolbarItem {
                 Button {
                     isGUI.toggle()

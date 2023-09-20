@@ -18,19 +18,27 @@ struct File: Identifiable, Hashable {
 class ContentViewModel: ObservableObject {
     @Published var currentDirectoryIndex: Int {
         didSet {
-            populateCurrentDirectoryFiles()
+            currentDirectoryDidChange()
         }
     }
     @Published var currentDirectoryFiles: [File] = []
     @Published var favorites: [File] = []
     @Published var iconSize: CGFloat = 72
     @Published var navigationHistory: [File]
+    @Published var pathComponentsArray: [File] = []
     @Published var selectedFiles: Set<File> = []
+    @Published var selectedPathComponent: Int = 0 {
+        didSet {
+            if selectedPathComponent != 0 {
+                open(pathComponentsArray[selectedPathComponent])
+            }
+        }
+    }
     @Published var stdoutConsole: AttributedString = ""
     @Published var stderrConsole: AttributedString = ""
-
+    
     var currentDirectory: File { navigationHistory[currentDirectoryIndex] }
-
+    
     init() {
         self.navigationHistory = [ File(url: FileManager.default.homeDirectoryForCurrentUser) ]
         self.currentDirectoryIndex = 0
@@ -41,7 +49,7 @@ class ContentViewModel: ObservableObject {
             File(url: URL(filePath: NSSearchPathForDirectoriesInDomains(.downloadsDirectory, .userDomainMask, true)[0]), sidebarIcon: "arrow.down.circle"),
         ]
         
-        populateCurrentDirectoryFiles()
+        currentDirectoryDidChange()
     }
     
     func open(_ file: File) {
@@ -137,14 +145,24 @@ class ContentViewModel: ObservableObject {
         }
     }
     
-    private func populateCurrentDirectoryFiles() {
+    private func currentDirectoryDidChange() {
         do {
+            // list the files in the new current directory
             let directoryContents = try FileManager.default.contentsOfDirectory(at: currentDirectory.url, includingPropertiesForKeys: [])
-            var files: [File] = []
+            currentDirectoryFiles = []
             for url in directoryContents.filter({ !($0.isHidden ?? false) }).sorted(by: { $0.path < $1.path }) {
-                files.append(File(url: url))
+                currentDirectoryFiles.append(File(url: url))
             }
-            currentDirectoryFiles = files
+            
+            // break the path into components
+            let rootDirectory = URL(filePath: NSOpenStepRootDirectory())
+            var directory = currentDirectory
+            pathComponentsArray = []
+            while directory.url != rootDirectory {
+                pathComponentsArray.append(directory)
+                directory = File(url: directory.url.deletingLastPathComponent())
+            }
+            selectedPathComponent = 0
         } catch {
         }
     }
