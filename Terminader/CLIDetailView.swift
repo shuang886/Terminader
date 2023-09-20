@@ -23,10 +23,12 @@ enum CLIPane: CaseIterable, Identifiable {
 class CLIOutput: Identifiable, Equatable {
     let id = UUID()
     var prompt: String = ""
+    var command: String = ""
     var terminationStatus: Int32 = 0
     
-    init(prompt: String, terminationStatus: Int32) {
+    init(prompt: String, command: String, terminationStatus: Int32) {
         self.prompt = prompt
+        self.command = command
         self.terminationStatus = terminationStatus
     }
     
@@ -38,9 +40,9 @@ class CLIOutput: Identifiable, Equatable {
 class CLITextOutput: CLIOutput {
     var text: AttributedString
     
-    init(prompt: String, terminationStatus: Int32, text: AttributedString) {
+    init(prompt: String, command: String, terminationStatus: Int32, text: AttributedString) {
         self.text = text
-        super.init(prompt: prompt, terminationStatus: terminationStatus)
+        super.init(prompt: prompt, command: command, terminationStatus: terminationStatus)
     }
 }
 
@@ -121,12 +123,17 @@ struct ConsoleView: View {
                         
                         if let textItem = consoleItem as? CLITextOutput {
                             VStack {
-                                Text(textItem.prompt)
-                                    .frame(maxWidth: .infinity, alignment: .leading)
-                                    .padding(.top, 2)
-                                    .padding(.horizontal, 4)
-                                    .foregroundColor(Color(NSColor.textBackgroundColor))
-                                    .background(Rectangle().fill(color))
+                                HStack(spacing: 0) {
+                                    Text(textItem.prompt)
+                                    Text(textItem.command)
+                                        .fontWeight(.bold)
+                                }
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                                .padding(.top, 2)
+                                .padding(.horizontal, 4)
+                                .foregroundColor(Color(NSColor.textBackgroundColor))
+                                .background(Rectangle().fill(color))
+                                
                                 Text(textItem.text)
                                     .lineLimit(nil)
                                     .frame(maxWidth: .infinity, alignment: .leading)

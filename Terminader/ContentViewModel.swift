@@ -108,7 +108,7 @@ class ContentViewModel: ObservableObject {
     }
     
     func run(prompt: String, command: String) {
-        let promptCommand = prompt + command.trimmingCharacters(in: .newlines)
+        let command = command.trimmingCharacters(in: .newlines)
         
         // FIXME: need to handle quotes and backslash escapes
         let commandParts = command.components(separatedBy: .whitespacesAndNewlines)
@@ -130,14 +130,16 @@ class ContentViewModel: ObservableObject {
             
             let stdoutData = stdoutPipe.fileHandleForReading.readDataToEndOfFile()
             let stdoutString = String(data: stdoutData, encoding: .utf8)!.trimmingCharacters(in: .newlines)
-            stdoutConsole.append(CLITextOutput(prompt: promptCommand,
+            stdoutConsole.append(CLITextOutput(prompt: prompt,
+                                               command: command,
                                                terminationStatus: task.terminationStatus,
                                                text: AttributedString(stdoutString)))
             
             let stderrData = stderrPipe.fileHandleForReading.readDataToEndOfFile()
             let stderrString = String(data: stderrData, encoding: .utf8)!.trimmingCharacters(in: .newlines)
             if !stderrString.isEmpty {
-                stderrConsole.append(CLITextOutput(prompt: promptCommand,
+                stderrConsole.append(CLITextOutput(prompt: prompt,
+                                                   command: command,
                                                    terminationStatus: task.terminationStatus,
                                                    text: AttributedString(stderrString)))
             }
