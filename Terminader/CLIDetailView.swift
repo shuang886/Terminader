@@ -60,8 +60,16 @@ struct CLIDetailView: View {
                 } label: {
                     Image(systemName: "arrow.down.doc")
                 }
+                .padding(.horizontal, 4)
                 .buttonStyle(.bordered)
                 .disabled(model.selectedFiles.isEmpty)
+                .overlay {
+                    if model.selectedFiles.count > 0 {
+                        Image(systemName: "\(model.selectedFiles.count).circle.fill")
+                            .imageScale(.small)
+                            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topTrailing)
+                    }
+                }
                 
                 Picker("", selection: $selectedPane, content: {
                     ForEach(CLIPane.allCases, content: { pane in
