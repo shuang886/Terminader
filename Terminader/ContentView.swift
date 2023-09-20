@@ -149,15 +149,15 @@ struct CLIDetailView: View {
                             }
                         }
                     
-                    Image("")
+                    Text("")
                         .frame(height: 0)
-                        .border(.red)
                         .id(bottomID)
                 }
                 
                 HStack(alignment: .top, spacing: 0) {
                     Text("\(model.currentDirectory.name) \(Image(systemName: "arrow.right.circle")) ")
                         .font(terminalFont)
+                        .foregroundColor(.green)
                     
                     TextEditor(text: $command)
                         .scrollContentBackground(.hidden)

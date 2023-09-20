@@ -84,28 +84,58 @@ class ContentViewModel: ObservableObject {
     }
     
     func run(prompt: String, command: String) {
-        console += AttributedString("\n" + prompt + command)
+        var promptAttr = AttributedString("\n" + prompt)
+        promptAttr.foregroundColor = .green
+        console += promptAttr + AttributedString(command)
         
-        let task = Process()
-        let pipe = Pipe()
+        // FIXME: need to handle quotes and backslash escapes
+        let commandParts = command.components(separatedBy: .whitespacesAndNewlines)
+        switch commandParts[0] {
+        case "cd":
+            chdir(commandParts)
+        default:
+            let task = Process()
+            let pipe = Pipe()
+            
+            task.standardOutput = pipe
+            task.standardError = pipe
+            task.arguments = ["-c", command]
+            task.launchPath = "/bin/zsh"
+            task.standardInput = nil
+            task.currentDirectoryURL = currentDirectory.url
+            task.launch()
+            
+            let data = pipe.fileHandleForReading.readDataToEndOfFile()
+            let output = String(data: data, encoding: .utf8)!.trimmingCharacters(in: .newlines)
+            console += AttributedString(output)
+        }
+    }
+    
+    private func chdir(_ commandParts: [String]) {
+        let destination: URL? = {
+            if commandParts.count == 1 || commandParts[1].isEmpty {
+                return FileManager.default.homeDirectoryForCurrentUser
+            }
+            else {
+                let destination = currentDirectory.url.appending(component: commandParts[1])
+                var isDirectory: ObjCBool = false
+                if FileManager.default.fileExists(atPath: destination.path, isDirectory: &isDirectory) && isDirectory.boolValue {
+                    return destination
+                }
+                return nil
+            }
+        }()
         
-        task.standardOutput = pipe
-        task.standardError = pipe
-        task.arguments = ["-c", command]
-        task.launchPath = "/bin/zsh"
-        task.standardInput = nil
-        task.launch()
-        
-        let data = pipe.fileHandleForReading.readDataToEndOfFile()
-        let output = String(data: data, encoding: .utf8)!.trimmingCharacters(in: .newlines)
-        console += AttributedString(output)
+        if let destination {
+            open(File(url: destination))
+        }
     }
     
     private func populateCurrentDirectoryFiles() {
         do {
             let directoryContents = try FileManager.default.contentsOfDirectory(at: currentDirectory.url, includingPropertiesForKeys: [])
             var files: [File] = []
-            for url in directoryContents.filter({ !($0.isHidden ?? false) }) {
+            for url in directoryContents.filter({ !($0.isHidden ?? false) }).sorted(by: { $0.path < $1.path }) {
                 files.append(File(url: url))
             }
             currentDirectoryFiles = files
