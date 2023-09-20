@@ -7,7 +7,7 @@
 
 import SwiftUI
 
-struct File: Identifiable, Hashable {
+struct File: Identifiable, Codable, Hashable {
     let id = UUID()
     let url: URL
     var name: String { url.localizedName ?? url.lastPathComponent }

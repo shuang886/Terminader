@@ -8,7 +8,7 @@
 import SwiftUI
 
 struct ContentView: View {
-    @StateObject var model = ContentViewModel()
+    @ObservedObject var model: ContentViewModel
     @State var isGUI: Bool = true
     
     var body: some View {
@@ -86,6 +86,6 @@ struct ContentView: View {
 
 struct ContentView_Previews: PreviewProvider {
     static var previews: some View {
-        ContentView()
+        ContentView(model: ContentViewModel())
     }
 }

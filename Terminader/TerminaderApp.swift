@@ -9,9 +9,20 @@ import SwiftUI
 
 @main
 struct TerminaderApp: App {
+    @StateObject var model = ContentViewModel()
+    
     var body: some Scene {
         WindowGroup {
-            ContentView()
+            ContentView(model: model)
+        }
+        
+        WindowGroup(for: File.self) { file in
+            let title = file.wrappedValue?.name ?? "Unknown"
+            
+            VStack {
+                Text("Info pane")
+            }
+            .navigationTitle("\(title) Info")
         }
     }
 }

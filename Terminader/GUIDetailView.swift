@@ -11,6 +11,8 @@ import WrappingHStack
 struct GUIDetailView: View {
     @EnvironmentObject var model: ContentViewModel
     
+    @Environment(\.openWindow) private var openWindow
+    
     var body: some View {
         VStack {
             ScrollView {
@@ -39,6 +41,11 @@ struct GUIDetailView: View {
                         .simultaneousGesture(TapGesture().onEnded {
                             model.select(file)
                         })
+                        .contextMenu {
+                            Button("Get Info") {
+                                openWindow(value: file)
+                            }
+                        }
                     }
                 }
                 .padding()
