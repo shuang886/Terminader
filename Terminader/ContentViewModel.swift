@@ -83,8 +83,22 @@ class ContentViewModel: ObservableObject {
         }
     }
     
-    func run(_ command: String) {
-        console += AttributedString(command)
+    func run(prompt: String, command: String) {
+        console += AttributedString("\n" + prompt + command)
+        
+        let task = Process()
+        let pipe = Pipe()
+        
+        task.standardOutput = pipe
+        task.standardError = pipe
+        task.arguments = ["-c", command]
+        task.launchPath = "/bin/zsh"
+        task.standardInput = nil
+        task.launch()
+        
+        let data = pipe.fileHandleForReading.readDataToEndOfFile()
+        let output = String(data: data, encoding: .utf8)!.trimmingCharacters(in: .newlines)
+        console += AttributedString(output)
     }
     
     private func populateCurrentDirectoryFiles() {

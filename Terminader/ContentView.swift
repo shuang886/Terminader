@@ -139,16 +139,23 @@ struct CLIDetailView: View {
             VStack(spacing: 0) {
                 ScrollView {
                     Text(model.console)
-                        .lineLimit(0, reservesSpace: false)
+                        .lineLimit(nil)
                         .frame(maxWidth: .infinity, alignment: .leading)
                         .font(terminalFont)
                         .textSelection(.enabled)
+                        .onChange(of: model.console) { _ in
+                            DispatchQueue.main.async {
+                                proxy.scrollTo(bottomID)
+                            }
+                        }
                     
-                    EmptyView()
+                    Image("")
+                        .frame(height: 0)
+                        .border(.red)
                         .id(bottomID)
                 }
-
-                HStack(spacing: 0) {
+                
+                HStack(alignment: .top, spacing: 0) {
                     Text("\(model.currentDirectory.name) \(Image(systemName: "arrow.right.circle")) ")
                         .font(terminalFont)
                     
@@ -160,7 +167,7 @@ struct CLIDetailView: View {
                         .fixedSize(horizontal: false, vertical: true)
                         .onChange(of: command) { _ in
                             if command.last?.isNewline ?? false {
-                                model.run(command)
+                                model.run(prompt: "\(model.currentDirectory.name) % ", command: command)
                                 command = ""
                             }
                         }
