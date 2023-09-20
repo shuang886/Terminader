@@ -26,8 +26,9 @@ class ContentViewModel: ObservableObject {
     @Published var iconSize: CGFloat = 72
     @Published var navigationHistory: [File]
     @Published var selectedFiles: Set<File> = []
-    @Published var console: AttributedString = ""
-    
+    @Published var stdoutConsole: AttributedString = ""
+    @Published var stderrConsole: AttributedString = ""
+
     var currentDirectory: File { navigationHistory[currentDirectoryIndex] }
 
     init() {
@@ -86,7 +87,7 @@ class ContentViewModel: ObservableObject {
     func run(prompt: String, command: String) {
         var promptAttr = AttributedString("\n" + prompt)
         promptAttr.foregroundColor = .green
-        console += promptAttr + AttributedString(command)
+        stdoutConsole += promptAttr + AttributedString(command)
         
         // FIXME: need to handle quotes and backslash escapes
         let commandParts = command.components(separatedBy: .whitespacesAndNewlines)
@@ -95,19 +96,24 @@ class ContentViewModel: ObservableObject {
             chdir(commandParts)
         default:
             let task = Process()
-            let pipe = Pipe()
+            let stdoutPipe = Pipe()
+            let stderrPipe = Pipe()
             
-            task.standardOutput = pipe
-            task.standardError = pipe
+            task.standardOutput = stdoutPipe
+            task.standardError = stderrPipe
             task.arguments = ["-c", command]
             task.launchPath = "/bin/zsh"
             task.standardInput = nil
             task.currentDirectoryURL = currentDirectory.url
             task.launch()
             
-            let data = pipe.fileHandleForReading.readDataToEndOfFile()
-            let output = String(data: data, encoding: .utf8)!.trimmingCharacters(in: .newlines)
-            console += AttributedString(output)
+            let stdoutData = stdoutPipe.fileHandleForReading.readDataToEndOfFile()
+            let stdoutString = String(data: stdoutData, encoding: .utf8)!.trimmingCharacters(in: .newlines)
+            stdoutConsole += AttributedString(stdoutString)
+            
+            let stderrData = stderrPipe.fileHandleForReading.readDataToEndOfFile()
+            let stderrString = String(data: stderrData, encoding: .utf8)!.trimmingCharacters(in: .newlines)
+            stderrConsole += AttributedString(stderrString)
         }
     }
     
