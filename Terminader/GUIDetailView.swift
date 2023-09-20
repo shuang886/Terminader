@@ -23,6 +23,7 @@ struct GUIDetailView: View {
                             Image(systemName: icon)
                                 .resizable()
                                 .scaledToFit()
+                                .fontWeight(.ultraLight)
                                 .foregroundColor(color ?? Color(NSColor.controlColor))
                                 .frame(width: model.iconSize, height: model.iconSize)
                                 .padding(4)
