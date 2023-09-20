@@ -128,13 +128,6 @@ class ContentViewModel: ObservableObject {
             task.currentDirectoryURL = currentDirectory.url
             task.launch()
             
-            let stdoutData = stdoutPipe.fileHandleForReading.readDataToEndOfFile()
-            let stdoutString = String(data: stdoutData, encoding: .utf8)!.trimmingCharacters(in: .newlines)
-            stdoutConsole.append(CLITextOutput(prompt: prompt,
-                                               command: command,
-                                               terminationStatus: task.terminationStatus,
-                                               text: AttributedString(stdoutString)))
-            
             let stderrData = stderrPipe.fileHandleForReading.readDataToEndOfFile()
             let stderrString = String(data: stderrData, encoding: .utf8)!.trimmingCharacters(in: .newlines)
             if !stderrString.isEmpty {
@@ -142,6 +135,22 @@ class ContentViewModel: ObservableObject {
                                                    command: command,
                                                    terminationStatus: task.terminationStatus,
                                                    text: AttributedString(stderrString)))
+            }
+            
+            let stdoutData = stdoutPipe.fileHandleForReading.readDataToEndOfFile()
+            let stdoutString = String(data: stdoutData, encoding: .utf8)!.trimmingCharacters(in: .newlines)
+            if task.terminationReason.rawValue != 0 && stdoutString.isEmpty && !stderrString.isEmpty {
+                // special case: error termination reason and no stdout, so copy the stderr output instead
+                stdoutConsole.append(CLITextOutput(prompt: prompt,
+                                                   command: command,
+                                                   terminationStatus: task.terminationStatus,
+                                                   text: AttributedString(stderrString)))
+            }
+            else {
+                stdoutConsole.append(CLITextOutput(prompt: prompt,
+                                                   command: command,
+                                                   terminationStatus: task.terminationStatus,
+                                                   text: AttributedString(stdoutString)))
             }
         }
     }
