@@ -89,6 +89,7 @@ struct CLIDetailView: View {
                             .onChange(of: model.selectedFiles) { _ in
                                 badgeAnimation()
                             }
+                            .allowsHitTesting(false)
                     }
                     else if model.selectedFiles.count > 50 {
                         Image(systemName: "plus.circle.fill")
@@ -103,6 +104,7 @@ struct CLIDetailView: View {
                             .onChange(of: model.selectedFiles) { _ in
                                 badgeAnimation()
                             }
+                            .allowsHitTesting(false)
                     }
                 }
                 .help("Paste selected items")
@@ -157,7 +159,7 @@ struct ConsoleView: View {
                         
                         if let textItem = consoleItem as? CLITextOutput {
                             VStack {
-                                HStack(spacing: 0) {
+                                HStack(alignment: .top, spacing: 0) {
                                     Text(textItem.prompt)
                                     Text(textItem.command)
                                         .fontWeight(.bold)
