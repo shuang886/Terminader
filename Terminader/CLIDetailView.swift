@@ -20,50 +20,6 @@ enum CLIPane: CaseIterable, Identifiable {
     }
 }
 
-/// Represents a single exchange of CLI command and resulting output.
-class CLIOutput: Identifiable, Equatable, Hashable, Codable {
-    /// Unique identifier
-    var id = UUID()
-    /// Command prompt at the time of issuance, mainly to mimic the look of a shell interface.
-    var prompt: String = ""
-    /// Command from the user.
-    var command: String = ""
-    /// Termination status of the application.
-    var terminationStatus: Int32 = 0
-    
-    init(prompt: String, command: String, terminationStatus: Int32) {
-        self.prompt = prompt
-        self.command = command
-        self.terminationStatus = terminationStatus
-    }
-    
-    static func == (lhs: CLIOutput, rhs: CLIOutput) -> Bool {
-        lhs.id == rhs.id
-    }
-    
-    func hash(into hasher: inout Hasher) {
-        hasher.combine(id)
-    }
-}
-
-/// A `CLIOutput` that contains only text, used by legacy applications.
-class CLITextOutput: CLIOutput {
-    /// String containing the output from the application, after certain ANSI escape sequences were parsed.
-    var text: AttributedString
-    private enum CodingKeys: String, CodingKey { case text }
-    
-    init(prompt: String, command: String, terminationStatus: Int32, text: AttributedString) {
-        self.text = text
-        super.init(prompt: prompt, command: command, terminationStatus: terminationStatus)
-    }
-    
-    required init(from decoder: Decoder) throws {
-        let container = try decoder.container(keyedBy: CodingKeys.self)
-        self.text = try container.decode(AttributedString.self, forKey: .text)
-        try super.init(from: decoder)
-    }
-}
-
 /// Renders the CLI (terminal) interface.
 struct CLIDetailView: View {
     @EnvironmentObject private var model: ContentViewModel
@@ -250,8 +206,13 @@ struct ConsoleItemView: View {
                         
                         Spacer()
                         
+                        Text(textItem.date, style: .relative)
+                            .monospacedDigit()
+                            .padding(.leading, 16)
+                        
                         if textItem.terminationStatus != 0 { // MARK: Termination status
                             Image(systemName: "return.right")
+                                .padding(.leading, 16)
                             Text("\(textItem.terminationStatus)")
                         }
                         
@@ -274,7 +235,7 @@ struct ConsoleItemView: View {
                         .lineLimit(nil)
                         .frame(maxWidth: .infinity, alignment: .leading)
                         .font(terminalFont)
-                        .textSelection(.enabled)
+                        .textSelection(.enabled) // FIXME: which causes line height change when clicked?
                         .padding(.horizontal, 4)
                         .padding(.bottom, 2)
                 }

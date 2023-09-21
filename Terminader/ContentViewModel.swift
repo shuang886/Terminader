@@ -19,6 +19,54 @@ struct File: Identifiable, Codable, Hashable {
     var sidebarIcon: String?
 }
 
+/// Represents a single exchange of CLI command and resulting output.
+class CLIOutput: Identifiable, Equatable, Hashable, Codable {
+    /// Unique identifier
+    var id = UUID()
+    /// Date/time when command was issued
+    var date: Date
+    /// Command prompt at the time of issuance, mainly to mimic the look of a shell interface.
+    var prompt: String = ""
+    /// Command from the user.
+    var command: String = ""
+    /// Termination status of the application.
+    var terminationStatus: Int32 = 0
+    
+    init(prompt: String, command: String, terminationStatus: Int32) {
+        self.date = Date.now
+        self.prompt = prompt
+        self.command = command
+        self.terminationStatus = terminationStatus
+    }
+    
+    static func == (lhs: CLIOutput, rhs: CLIOutput) -> Bool {
+        lhs.id == rhs.id
+    }
+    
+    func hash(into hasher: inout Hasher) {
+        hasher.combine(id)
+    }
+}
+
+/// A `CLIOutput` that contains only text, used by legacy applications.
+class CLITextOutput: CLIOutput {
+    /// String containing the output from the application, after certain ANSI escape sequences were parsed.
+    var text: AttributedString
+    private enum CodingKeys: String, CodingKey { case text }
+    
+    init(prompt: String, command: String, terminationStatus: Int32, text: AttributedString) {
+        self.text = text
+        super.init(prompt: prompt, command: command, terminationStatus: terminationStatus)
+    }
+    
+    required init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        self.text = try container.decode(AttributedString.self, forKey: .text)
+        try super.init(from: decoder)
+    }
+}
+
+
 /// Main model representing the filesystem and browsing context.
 class ContentViewModel: ObservableObject {
     /// Filter for `stdoutConsole` and `stderrConsole`

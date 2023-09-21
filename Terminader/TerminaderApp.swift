@@ -29,9 +29,14 @@ struct TerminaderApp: App {
                 let terminalFont = Font.system(size: 16).monospaced()
                 let status = consoleItem.terminationStatus
                 ScrollView {
+                    Text(consoleItem.date, style: .relative)
+                        .monospacedDigit()
+                        .frame(maxWidth: .infinity, alignment: .trailing)
+                        .foregroundColor(.secondary)
                     ConsoleItemView(consoleItem: consoleItem, terminalFont: terminalFont)
                 }
                 .navigationTitle(status != 0 ? "\(consoleItem.command) — \(status)" : consoleItem.command)
+                .padding()
             }
         }
     }
