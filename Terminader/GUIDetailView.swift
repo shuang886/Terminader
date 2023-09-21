@@ -24,7 +24,7 @@ struct GUIDetailView: View {
                                 .resizable()
                                 .scaledToFit()
                                 .fontWeight(.ultraLight)
-                                .foregroundColor(color ?? Color(NSColor.controlColor))
+                                .foregroundColor(color ?? Color(NSColor.textColor))
                                 .frame(width: model.iconSize, height: model.iconSize)
                                 .padding(4)
                                 .background(RoundedRectangle(cornerRadius: 6).fill(model.selectedFiles.contains(file) ? Color(NSColor.controlColor) : .clear))

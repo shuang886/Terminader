@@ -136,6 +136,10 @@ class ContentViewModel: ObservableObject {
             task.standardError = stderrPipe
             task.arguments = ["-c", command]
             task.launchPath = "/bin/zsh"
+            task.environment = [
+                "TERM" : "xterm-256color",
+                "CLICOLOR" : "1",
+            ]
             task.currentDirectoryURL = currentDirectory.url
             
             stdoutString = ""
@@ -169,7 +173,7 @@ class ContentViewModel: ObservableObject {
                         stdoutConsole.append(CLITextOutput(prompt: prompt,
                                                            command: command,
                                                            terminationStatus: task.terminationStatus,
-                                                           text: AttributedString(stdoutString!)))
+                                                           text: AttributedString.create(fromANSI: stdoutString!)))
                     }
                 }
             }
@@ -293,5 +297,82 @@ extension String {
             j = pattern.index(after: j)
         }
         return j == m
+    }
+}
+
+extension AttributedString {
+    static func create(fromANSI string: String) -> AttributedString {
+        var state = 0
+        var output = AttributedString("")
+        var chars: [Character] = []
+        var fgColor: Int?
+        var bgColor: Int?
+        for char in string {
+            switch state {
+            case 0:
+                if char == "\u{1B}" {
+                    var attrString = AttributedString(chars)
+                    attrString.foregroundColor = Color.create(fromANSI: fgColor)
+                    attrString.backgroundColor = Color.create(fromANSI: bgColor)
+                    output += attrString
+                    chars = []
+                    fgColor = nil
+                    bgColor = nil
+                    state = 1
+                }
+                else {
+                    chars.append(char)
+                }
+            case 1:
+                state = (char == "[") ? 2 : 0
+            case 2:
+                if char.isNumber {
+                    fgColor = (fgColor ?? 0) * 10 + (char.wholeNumberValue ?? 0)
+                }
+                else if char == ";" {
+                    state = 3
+                }
+                else {
+                    state = 0
+                }
+            case 3:
+                if char.isNumber {
+                    bgColor = (bgColor ?? 0) * 10 + (char.wholeNumberValue ?? 0)
+                }
+                else {
+                    state = 0
+                }
+            default:
+                fatalError("invalid state")
+            }
+        }
+        return output
+    }
+}
+
+extension Color {
+    static func create(fromANSI: Int?) -> Color? {
+        guard let fromANSI else { return nil }
+        switch fromANSI {
+        case 39:      return Color(NSColor.textColor)
+        case 49:      return Color(NSColor.textBackgroundColor)
+        case 30, 40:  return Color("ANSIBlackColor")
+        case 31, 41:  return Color("ANSIRedColor")
+        case 32, 42:  return Color("ANSIGreenColor")
+        case 33, 43:  return Color("ANSIYellowColor")
+        case 34, 44:  return Color("ANSIBlueColor")
+        case 35, 45:  return Color("ANSIMagentaColor")
+        case 36, 46:  return Color("ANSICyanColor")
+        case 37, 47:  return Color("ANSIWhiteColor")
+        case 90, 100: return Color("ANSIBrightBlackColor")
+        case 91, 101: return Color("ANSIBrightRedColor")
+        case 92, 102: return Color("ANSIBrightGreenColor")
+        case 93, 103: return Color("ANSIBrightYellowColor")
+        case 94, 104: return Color("ANSIBrightBlueColor")
+        case 95, 105: return Color("ANSIBrightMagentaColor")
+        case 96, 106: return Color("ANSIBrightCyanColor")
+        case 97, 107: return Color("ANSIBrightWhiteColor")
+        default: return nil
+        }
     }
 }
