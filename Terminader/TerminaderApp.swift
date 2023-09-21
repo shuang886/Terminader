@@ -9,11 +9,9 @@ import SwiftUI
 
 @main
 struct TerminaderApp: App {
-    @StateObject var model = ContentViewModel()
-    
     var body: some Scene {
         WindowGroup { // MARK: Main window
-            ContentView(model: model)
+            ContentView()
         }
         
         WindowGroup(for: File.self) { file in // MARK: Get Info window

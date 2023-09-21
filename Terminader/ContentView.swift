@@ -8,7 +8,7 @@
 import SwiftUI
 
 struct ContentView: View {
-    @ObservedObject var model: ContentViewModel
+    @StateObject var model = ContentViewModel()
     /// Whether the window is in GUI mode or CLI mode.
     @State var isGUI: Bool = true
     
