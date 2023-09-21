@@ -21,6 +21,13 @@ struct File: Identifiable, Codable, Hashable {
 
 /// Main model representing the filesystem and browsing context.
 class ContentViewModel: ObservableObject {
+    /// Filter for `stdoutConsole` and `stderrConsole`
+    @Published var consoleFilter: String = "" {
+        didSet {
+            stdoutConsoleFilterDidChange()
+            stderrConsoleFilterDidChange()
+        }
+    }
     /// Index of current directory into `navigationHistory`. This enables the user to browse back and forward.
     @Published var currentDirectoryIndex: Int {
         didSet {
@@ -51,9 +58,19 @@ class ContentViewModel: ObservableObject {
     }
     /// List of `CLIOutput`s representing the standard output.
     @Published var stdoutConsole: [CLIOutput] = []
+    private var unfilteredStdoutConsole: [CLIOutput] = [] {
+        didSet {
+            stdoutConsoleFilterDidChange()
+        }
+    }
     /// List of `CLIOutput`s representing the error output.
     @Published var stderrConsole: [CLIOutput] = []
-    
+    private var unfilteredStderrConsole: [CLIOutput] = [] {
+        didSet {
+            stderrConsoleFilterDidChange()
+        }
+    }
+
     /// Convenience to get the current directory.
     var currentDirectory: File { navigationHistory[currentDirectoryIndex] }
     /// Free space in the disk volume of the current directory.
@@ -154,17 +171,17 @@ class ContentViewModel: ObservableObject {
             chdir(commandParts)
         case "select":
             if let output = select(commandParts) {
-                stdoutConsole.append(CLITextOutput(prompt: prompt,
-                                                   command: command,
-                                                   terminationStatus: 0,
-                                                   text: AttributedString(output)))
+                unfilteredStdoutConsole.append(CLITextOutput(prompt: prompt,
+                                                             command: command,
+                                                             terminationStatus: 0,
+                                                             text: AttributedString(output)))
             }
         case "deselect":
             if let output = deselect(commandParts) {
-                stdoutConsole.append(CLITextOutput(prompt: prompt,
-                                                   command: command,
-                                                   terminationStatus: 0,
-                                                   text: AttributedString(output)))
+                unfilteredStdoutConsole.append(CLITextOutput(prompt: prompt,
+                                                             command: command,
+                                                             terminationStatus: 0,
+                                                             text: AttributedString(output)))
             }
         default:
             // https://stackoverflow.com/questions/55228685/opening-new-pseudo-terminal-device-file-in-macos-with-swift
@@ -205,26 +222,26 @@ class ContentViewModel: ObservableObject {
                     let stderrData = stderrPipe.fileHandleForReading.readDataToEndOfFile()
                     let stderrString = String(data: stderrData, encoding: .utf8)!.trimmingCharacters(in: .newlines)
                     if !stderrString.isEmpty {
-                        stderrConsole.append(CLITextOutput(prompt: prompt,
-                                                           command: command,
-                                                           terminationStatus: task.terminationStatus,
-                                                           text: AttributedString(stderrString)))
+                        unfilteredStderrConsole.append(CLITextOutput(prompt: prompt,
+                                                                     command: command,
+                                                                     terminationStatus: task.terminationStatus,
+                                                                     text: AttributedString(stderrString)))
                     }
                     
                     stdoutString = stdoutString?.trimmingCharacters(in: .newlines)
                     if task.terminationReason.rawValue != 0 && stdoutString!.isEmpty && !stderrString.isEmpty {
                         // Special case: error termination reason and no stdout, so copy the stderr output instead
-                        stdoutConsole.append(CLITextOutput(prompt: prompt,
-                                                           command: command,
-                                                           terminationStatus: task.terminationStatus,
-                                                           text: AttributedString(stderrString)))
+                        unfilteredStdoutConsole.append(CLITextOutput(prompt: prompt,
+                                                                     command: command,
+                                                                     terminationStatus: task.terminationStatus,
+                                                                     text: AttributedString(stderrString)))
                     }
                     else {
                         // Process stdout through our ANSI parser.
-                        stdoutConsole.append(CLITextOutput(prompt: prompt,
-                                                           command: command,
-                                                           terminationStatus: task.terminationStatus,
-                                                           text: AttributedString.create(fromANSI: stdoutString!)))
+                        unfilteredStdoutConsole.append(CLITextOutput(prompt: prompt,
+                                                                     command: command,
+                                                                     terminationStatus: task.terminationStatus,
+                                                                     text: AttributedString.create(fromANSI: stdoutString!)))
                     }
                 }
             }
@@ -328,6 +345,40 @@ class ContentViewModel: ObservableObject {
             selectedPathComponent = 0
         } catch {
             fatalError("file manager failed to read current directory")
+        }
+    }
+    
+    /// Handles a change to consoleFilter by refiltering stdoutConsole.
+    private func stdoutConsoleFilterDidChange() {
+        stdoutConsole = unfilteredStdoutConsole.filter { output in
+            if consoleFilter.isEmpty {
+                return true
+            }
+            if output.command.localizedCaseInsensitiveContains(consoleFilter) {
+                return true
+            }
+            if let textOutput = output as? CLITextOutput,
+               String(textOutput.text.characters).localizedCaseInsensitiveContains(consoleFilter) {
+                return true
+            }
+            return false
+        }
+    }
+    
+    /// Handles a change to consoleFilter by refiltering stderrConsole.
+    private func stderrConsoleFilterDidChange() {
+        stderrConsole = unfilteredStderrConsole.filter { output in
+            if consoleFilter.isEmpty {
+                return true
+            }
+            if output.command.localizedCaseInsensitiveContains(consoleFilter) {
+                return true
+            }
+            if let textOutput = output as? CLITextOutput,
+               String(textOutput.text.characters).localizedCaseInsensitiveContains(consoleFilter) {
+                return true
+            }
+            return false
         }
     }
 }

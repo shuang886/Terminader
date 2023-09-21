@@ -136,6 +136,9 @@ struct CLIDetailView: View {
                 .pickerStyle(.segmented)
                 .labelsHidden()
                 .clipped()
+                
+                SearchField(prompt: String(localized: "🔍 Filter"), text: $model.consoleFilter)
+                    .frame(width: 200)
             }
             .padding(8)
             

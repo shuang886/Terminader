@@ -10,6 +10,7 @@
 		B04C97962ABB42C10007A34F /* GUIDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B04C97952ABB42C10007A34F /* GUIDetailView.swift */; };
 		B04C97982ABB430E0007A34F /* CLIDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B04C97972ABB430E0007A34F /* CLIDetailView.swift */; };
 		B04C979A2ABCA0F50007A34F /* ANSI.swift in Sources */ = {isa = PBXBuildFile; fileRef = B04C97992ABCA0F50007A34F /* ANSI.swift */; };
+		B04C979C2ABCC3400007A34F /* SearchField.swift in Sources */ = {isa = PBXBuildFile; fileRef = B04C979B2ABCC3400007A34F /* SearchField.swift */; };
 		B06CAEB42ABA170500405BAC /* TerminaderApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = B06CAEB32ABA170500405BAC /* TerminaderApp.swift */; };
 		B06CAEB62ABA170500405BAC /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B06CAEB52ABA170500405BAC /* ContentView.swift */; };
 		B06CAEB82ABA170600405BAC /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = B06CAEB72ABA170600405BAC /* Assets.xcassets */; };
@@ -22,6 +23,7 @@
 		B04C97952ABB42C10007A34F /* GUIDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GUIDetailView.swift; sourceTree = "<group>"; };
 		B04C97972ABB430E0007A34F /* CLIDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CLIDetailView.swift; sourceTree = "<group>"; };
 		B04C97992ABCA0F50007A34F /* ANSI.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ANSI.swift; sourceTree = "<group>"; };
+		B04C979B2ABCC3400007A34F /* SearchField.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SearchField.swift; sourceTree = "<group>"; };
 		B06CAEB02ABA170500405BAC /* Terminader.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Terminader.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		B06CAEB32ABA170500405BAC /* TerminaderApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TerminaderApp.swift; sourceTree = "<group>"; };
 		B06CAEB52ABA170500405BAC /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
@@ -69,6 +71,7 @@
 				B06CAEC72ABA251800405BAC /* ContentViewModel.swift */,
 				B04C97952ABB42C10007A34F /* GUIDetailView.swift */,
 				B04C97972ABB430E0007A34F /* CLIDetailView.swift */,
+				B04C979B2ABCC3400007A34F /* SearchField.swift */,
 				B04C97992ABCA0F50007A34F /* ANSI.swift */,
 				B06CAEB72ABA170600405BAC /* Assets.xcassets */,
 				B06CAEBC2ABA170600405BAC /* Terminader.entitlements */,
@@ -166,6 +169,7 @@
 				B06CAEB62ABA170500405BAC /* ContentView.swift in Sources */,
 				B04C97962ABB42C10007A34F /* GUIDetailView.swift in Sources */,
 				B06CAEB42ABA170500405BAC /* TerminaderApp.swift in Sources */,
+				B04C979C2ABCC3400007A34F /* SearchField.swift in Sources */,
 				B04C97982ABB430E0007A34F /* CLIDetailView.swift in Sources */,
 				B06CAEC82ABA251800405BAC /* ContentViewModel.swift in Sources */,
 			);
