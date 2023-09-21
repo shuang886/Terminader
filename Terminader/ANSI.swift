@@ -75,13 +75,10 @@ extension AttributedString {
                     // keep reading digits of the number into p1
                     p1 = (p1 ?? 0) * 10 + (char.wholeNumberValue ?? 0)
                 }
-                else if char == ";" {
-                    state = .secondParameter
-                }
                 else if char == "?" {
                     state = .xtermStuff
                 }
-                else if char == "m" {
+                else if char == "m" || char == ";" {
                     // https://en.wikipedia.org/wiki/ANSI_escape_code#SGR_(Select_Graphic_Rendition)_parameters
                     switch p1! {
                     case 0:
@@ -106,7 +103,7 @@ extension AttributedString {
                     default:
                         break
                     }
-                    state = .initial
+                    state = (char == "m") ? .initial : .secondParameter
                 }
                 else {
                     state = .initial
