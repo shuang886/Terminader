@@ -107,6 +107,8 @@ class ContentViewModel: ObservableObject {
         selectedFiles.remove(file)
     }
     
+    var stdoutString: String?
+    
     func run(prompt: String, command: String) {
         let command = command.trimmingCharacters(in: .newlines)
         
@@ -121,40 +123,60 @@ class ContentViewModel: ObservableObject {
             deselect(commandParts)
         default:
             let task = Process()
-            let stdoutPipe = Pipe()
+            let masterFD = posix_openpt(O_RDWR)
+            grantpt(masterFD)
+            unlockpt(masterFD)
+            let masterFile = FileHandle(fileDescriptor: masterFD)
+            let slavePath = String(cString: ptsname(masterFD))
+            let slaveFile = FileHandle(forUpdatingAtPath: slavePath)
             let stderrPipe = Pipe()
             
-            task.standardOutput = stdoutPipe
+            task.standardInput = slaveFile
+            task.standardOutput = slaveFile
             task.standardError = stderrPipe
             task.arguments = ["-c", command]
             task.launchPath = "/bin/zsh"
-            task.standardInput = nil
             task.currentDirectoryURL = currentDirectory.url
-            task.launch()
             
-            let stderrData = stderrPipe.fileHandleForReading.readDataToEndOfFile()
-            let stderrString = String(data: stderrData, encoding: .utf8)!.trimmingCharacters(in: .newlines)
-            if !stderrString.isEmpty {
-                stderrConsole.append(CLITextOutput(prompt: prompt,
-                                                   command: command,
-                                                   terminationStatus: task.terminationStatus,
-                                                   text: AttributedString(stderrString)))
+            stdoutString = ""
+            masterFile.readabilityHandler = { [self] _ in
+                let stdoutData = masterFile.availableData
+                stdoutString! += String(data: stdoutData, encoding: .utf8) ?? ""
             }
             
-            let stdoutData = stdoutPipe.fileHandleForReading.readDataToEndOfFile()
-            let stdoutString = String(data: stdoutData, encoding: .utf8)!.trimmingCharacters(in: .newlines)
-            if task.terminationReason.rawValue != 0 && stdoutString.isEmpty && !stderrString.isEmpty {
-                // special case: error termination reason and no stdout, so copy the stderr output instead
-                stdoutConsole.append(CLITextOutput(prompt: prompt,
-                                                   command: command,
-                                                   terminationStatus: task.terminationStatus,
-                                                   text: AttributedString(stderrString)))
+            task.terminationHandler = { [self] _ in
+                masterFile.readabilityHandler = nil
+                
+                DispatchQueue.main.async { [self] in
+                    let stderrData = stderrPipe.fileHandleForReading.readDataToEndOfFile()
+                    let stderrString = String(data: stderrData, encoding: .utf8)!.trimmingCharacters(in: .newlines)
+                    if !stderrString.isEmpty {
+                        stderrConsole.append(CLITextOutput(prompt: prompt,
+                                                           command: command,
+                                                           terminationStatus: task.terminationStatus,
+                                                           text: AttributedString(stderrString)))
+                    }
+                    
+                    stdoutString = stdoutString?.trimmingCharacters(in: .newlines)
+                    if task.terminationReason.rawValue != 0 && stdoutString!.isEmpty && !stderrString.isEmpty {
+                        // special case: error termination reason and no stdout, so copy the stderr output instead
+                        stdoutConsole.append(CLITextOutput(prompt: prompt,
+                                                           command: command,
+                                                           terminationStatus: task.terminationStatus,
+                                                           text: AttributedString(stderrString)))
+                    }
+                    else {
+                        stdoutConsole.append(CLITextOutput(prompt: prompt,
+                                                           command: command,
+                                                           terminationStatus: task.terminationStatus,
+                                                           text: AttributedString(stdoutString!)))
+                    }
+                }
             }
-            else {
-                stdoutConsole.append(CLITextOutput(prompt: prompt,
-                                                   command: command,
-                                                   terminationStatus: task.terminationStatus,
-                                                   text: AttributedString(stdoutString)))
+            
+            do {
+                try task.run()
+            } catch {
             }
         }
     }
