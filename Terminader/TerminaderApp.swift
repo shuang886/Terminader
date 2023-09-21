@@ -28,10 +28,11 @@ struct TerminaderApp: App {
         WindowGroup(for: CLIOutput.self) { output in
             if let consoleItem = output.wrappedValue {
                 let terminalFont = Font.system(size: 16).monospaced()
+                let status = consoleItem.terminationStatus
                 ScrollView {
                     ConsoleItemView(consoleItem: consoleItem, terminalFont: terminalFont)
                 }
-                .navigationTitle("\(consoleItem.command) — \(consoleItem.terminationStatus)")
+                .navigationTitle(status != 0 ? "\(consoleItem.command) — \(status)" : consoleItem.command)
             }
         }
     }
