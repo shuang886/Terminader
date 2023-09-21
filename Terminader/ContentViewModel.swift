@@ -305,19 +305,39 @@ extension AttributedString {
         var state = 0
         var output = AttributedString("")
         var chars: [Character] = []
+        
+        let baseFont: Font = .body.monospaced()
         var fgColor: Int?
         var bgColor: Int?
+        var bold = false
+        var italic = false
+        var underline = false
+        
+        var p1: Int?
+        var p2: Int?
+        
         for char in string {
             switch state {
             case 0:
                 if char == "\u{1B}" {
                     var attrString = AttributedString(chars)
+                    var font = baseFont
+                    if bold {
+                        font = font.bold()
+                    }
+                    if italic {
+                        font = font.italic()
+                    }
+                    attrString.font = font
+                    if underline {
+                        attrString.underlineStyle = .single
+                    }
                     attrString.foregroundColor = Color.create(fromANSI: fgColor)
                     attrString.backgroundColor = Color.create(fromANSI: bgColor)
                     output += attrString
                     chars = []
-                    fgColor = nil
-                    bgColor = nil
+                    p1 = nil
+                    p2 = nil
                     state = 1
                 }
                 else {
@@ -327,19 +347,63 @@ extension AttributedString {
                 state = (char == "[") ? 2 : 0
             case 2:
                 if char.isNumber {
-                    fgColor = (fgColor ?? 0) * 10 + (char.wholeNumberValue ?? 0)
+                    p1 = (p1 ?? 0) * 10 + (char.wholeNumberValue ?? 0)
                 }
                 else if char == ";" {
                     state = 3
+                }
+                else if char == "?" {
+                    state = 100
+                }
+                else if char == "m" {
+                    switch p1! {
+                    case 0:
+                        bold = false
+                        italic = false
+                        underline = false
+                        italic = false
+                        fgColor = nil
+                        bgColor = nil
+                    case 1:
+                        bold = true
+                    case 3:
+                        italic = true
+                    case 4:
+                        underline = true
+                    case 24:
+                        underline = false
+                    case 30...37, 90...97:
+                        fgColor = p1
+                    case 39:
+                        fgColor = nil
+                    default:
+                        break
+                    }
+                    state = 0
                 }
                 else {
                     state = 0
                 }
             case 3:
                 if char.isNumber {
-                    bgColor = (bgColor ?? 0) * 10 + (char.wholeNumberValue ?? 0)
+                    p2 = (p2 ?? 0) * 10 + (char.wholeNumberValue ?? 0)
+                }
+                else if char == "m" {
+                    switch p2! {
+                    case 40...47, 100...107:
+                        bgColor = p2
+                    case 49:
+                        bgColor = nil
+                    default:
+                        break
+                    }
+                    state = 0
                 }
                 else {
+                    state = 0
+                }
+            case 100:
+                if char == "h" {
                     state = 0
                 }
             default:

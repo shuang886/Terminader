@@ -149,12 +149,7 @@ struct ConsoleView: View {
                             if isStderr {
                                 return Color.orange
                             }
-                            else if consoleItem.terminationStatus != 0 {
-                                return Color.red
-                            }
-                            else {
-                                return Color.cyan
-                            }
+                            return consoleItem.terminationStatus != 0 ? Color.red : Color.cyan
                         }()
                         
                         if let textItem = consoleItem as? CLITextOutput {
@@ -163,6 +158,12 @@ struct ConsoleView: View {
                                     Text(textItem.prompt)
                                     Text(textItem.command)
                                         .fontWeight(.bold)
+                                    
+                                    Spacer()
+                                    
+                                    if textItem.terminationStatus != 0 {
+                                        Text("\(textItem.terminationStatus)")
+                                    }
                                 }
                                 .frame(maxWidth: .infinity, alignment: .leading)
                                 .padding(.top, 2)
