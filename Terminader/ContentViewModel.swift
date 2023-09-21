@@ -210,7 +210,10 @@ class ContentViewModel: ObservableObject {
     /// - Parameter prompt: Command prompt displayed at the time of command issuance.
     /// - Parameter command: Command entered by the user.
     func run(prompt: String, command: String) {
-        let command = command.trimmingCharacters(in: .newlines)
+        var command = command.trimmingCharacters(in: .newlines)
+        if let bundledCommand = Bundle.main.url(forResource: command, withExtension: nil, subdirectory: "scripts") {
+            command = bundledCommand.path
+        }
         
         // FIXME: need to handle quotes and backslash escapes
         let commandParts = command.components(separatedBy: .whitespacesAndNewlines)

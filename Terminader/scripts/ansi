@@ -1,0 +1,27 @@
+#!/bin/sh
+
+CLEAR="\033[0m"
+BOLD="\033[1m"
+ITALIC="\033[3m"
+UNDERLINE="\033[4m"
+
+echo "           bold     italic     underline"
+echo "bold       ${BOLD}Sample${CLEAR}   ${BOLD}${ITALIC}Sample${CLEAR}     ${BOLD}${UNDERLINE}Sample${CLEAR}"
+echo "italic     -        ${ITALIC}Sample${CLEAR}     ${ITALIC}${UNDERLINE}Sample${CLEAR}"
+echo "underline  -        -          ${UNDERLINE}Sample${CLEAR}"
+
+echo
+
+for f in {90..97}; do
+    for b in {40..47}; do
+        printf "\033[%d;%dm %s;%s " "$f" "$b" "$f" "$b"
+    done
+    printf "\033[39;49m\n";
+done
+
+for f in {30..37}; do
+    for b in {100..107}; do
+        printf "\033[%d;%dm %s;%s " "$f" "$b" "$f" "$b"
+    done
+    printf "\033[39;49m\n";
+done
