@@ -316,26 +316,32 @@ extension AttributedString {
         var p1: Int?
         var p2: Int?
         
+        let outputChars = {
+            if !chars.isEmpty {
+                var attrString = AttributedString(chars)
+                var font = baseFont
+                if bold {
+                    font = font.bold()
+                }
+                if italic {
+                    font = font.italic()
+                }
+                attrString.font = font
+                if underline {
+                    attrString.underlineStyle = .single
+                }
+                attrString.foregroundColor = Color.create(fromANSI: fgColor)
+                attrString.backgroundColor = Color.create(fromANSI: bgColor)
+                output += attrString
+                chars = []
+            }
+        }
+        
         for char in string {
             switch state {
             case 0:
                 if char == "\u{1B}" {
-                    var attrString = AttributedString(chars)
-                    var font = baseFont
-                    if bold {
-                        font = font.bold()
-                    }
-                    if italic {
-                        font = font.italic()
-                    }
-                    attrString.font = font
-                    if underline {
-                        attrString.underlineStyle = .single
-                    }
-                    attrString.foregroundColor = Color.create(fromANSI: fgColor)
-                    attrString.backgroundColor = Color.create(fromANSI: bgColor)
-                    output += attrString
-                    chars = []
+                    outputChars()
                     p1 = nil
                     p2 = nil
                     state = 1
@@ -410,6 +416,7 @@ extension AttributedString {
                 fatalError("invalid state")
             }
         }
+        outputChars()
         return output
     }
 }
