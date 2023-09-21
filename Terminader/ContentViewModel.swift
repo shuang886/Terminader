@@ -211,12 +211,10 @@ class ContentViewModel: ObservableObject {
     /// - Parameter command: Command entered by the user.
     func run(prompt: String, command: String) {
         var command = command.trimmingCharacters(in: .newlines)
-        if let bundledCommand = Bundle.main.url(forResource: command, withExtension: nil, subdirectory: "scripts") {
-            command = bundledCommand.path
-        }
+        let originalCommand = command
         
         // FIXME: need to handle quotes and backslash escapes
-        let commandParts = command.components(separatedBy: .whitespacesAndNewlines)
+        var commandParts = command.components(separatedBy: .whitespacesAndNewlines)
         switch commandParts[0] {
         case "cd":
             chdir(commandParts)
@@ -235,6 +233,11 @@ class ContentViewModel: ObservableObject {
                                                              text: AttributedString(output)))
             }
         default:
+            if let bundledCommand = Bundle.main.url(forResource: commandParts[0], withExtension: nil, subdirectory: "scripts") {
+                commandParts[0] = bundledCommand.path
+                command = commandParts.joined(separator: " ")
+            }
+            
             // https://stackoverflow.com/questions/55228685/opening-new-pseudo-terminal-device-file-in-macos-with-swift
             let task = Process()
             let masterFD = posix_openpt(O_RDWR)
@@ -274,7 +277,7 @@ class ContentViewModel: ObservableObject {
                     let stderrString = String(data: stderrData, encoding: .utf8)!.trimmingCharacters(in: .newlines)
                     if !stderrString.isEmpty {
                         unfilteredStderrConsole.append(CLITextOutput(prompt: prompt,
-                                                                     command: command,
+                                                                     command: originalCommand,
                                                                      terminationStatus: task.terminationStatus,
                                                                      text: AttributedString(stderrString)))
                     }
@@ -283,14 +286,14 @@ class ContentViewModel: ObservableObject {
                     if task.terminationReason.rawValue != 0 && stdoutString!.isEmpty && !stderrString.isEmpty {
                         // Special case: error termination reason and no stdout, so copy the stderr output instead
                         unfilteredStdoutConsole.append(CLITextOutput(prompt: prompt,
-                                                                     command: command,
+                                                                     command: originalCommand,
                                                                      terminationStatus: task.terminationStatus,
                                                                      text: AttributedString(stderrString)))
                     }
                     else {
                         // Process stdout through our ANSI parser.
                         unfilteredStdoutConsole.append(CLITextOutput(prompt: prompt,
-                                                                     command: command,
+                                                                     command: originalCommand,
                                                                      terminationStatus: task.terminationStatus,
                                                                      text: AttributedString.create(fromANSI: stdoutString!)))
                     }
