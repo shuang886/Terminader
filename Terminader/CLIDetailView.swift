@@ -200,6 +200,7 @@ struct ConsoleView: View {
                         .foregroundColor(.green)
                     
                     TextEditor(text: $command)
+                        .autocorrectionDisabled()
                         .scrollContentBackground(.hidden)
                         .scrollIndicators(.never)
                         .font(terminalFont)
