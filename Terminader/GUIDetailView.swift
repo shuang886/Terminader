@@ -8,6 +8,7 @@
 import SwiftUI
 import WrappingHStack
 
+/// Renders a graphical (Finder) interface, a grid of files and directories in the current directory.
 struct GUIDetailView: View {
     @EnvironmentObject var model: ContentViewModel
     
@@ -16,11 +17,11 @@ struct GUIDetailView: View {
     var body: some View {
         VStack {
             ScrollView {
-                WrappingHStack(alignment: .topLeading, horizontalSpacing: 32, verticalSpacing: 32) {
+                WrappingHStack(alignment: .topLeading, horizontalSpacing: 32, verticalSpacing: 32) { // MARK: Grid
                     ForEach(model.currentDirectoryFiles) { file in
                         VStack {
                             let (icon, color) = file.icon
-                            Image(systemName: icon)
+                            Image(systemName: icon) // MARK: File/directory icon
                                 .resizable()
                                 .scaledToFit()
                                 .fontWeight(.ultraLight)
@@ -28,7 +29,7 @@ struct GUIDetailView: View {
                                 .frame(width: model.iconSize, height: model.iconSize)
                                 .padding(4)
                                 .background(RoundedRectangle(cornerRadius: 6).fill(model.selectedFiles.contains(file) ? Color(NSColor.controlColor) : .clear))
-                            Text(file.name)
+                            Text(file.name) // MARK: File/directory name
                                 .truncationMode(.middle)
                                 .multilineTextAlignment(.center)
                                 .lineLimit(3)
@@ -36,10 +37,10 @@ struct GUIDetailView: View {
                                 .background(RoundedRectangle(cornerRadius: 3).fill(model.selectedFiles.contains(file) ? .blue : .clear))
                                 .frame(width: model.iconSize + 16)
                         }
-                        .gesture(TapGesture(count: 2).onEnded {
+                        .gesture(TapGesture(count: 2).onEnded { // double-click
                             model.open(file)
                         })
-                        .simultaneousGesture(TapGesture().modifiers(.command).onEnded {
+                        .simultaneousGesture(TapGesture().modifiers(.command).onEnded { // command-click
                             if model.selectedFiles.contains(file) {
                                 model.deselect(file)
                             }
@@ -47,7 +48,7 @@ struct GUIDetailView: View {
                                 model.select(file, add: true)
                             }
                         })
-                        .gesture(TapGesture().onEnded {
+                        .gesture(TapGesture().onEnded { // single click
                             model.select(file)
                         })
                         .contextMenu {
@@ -62,12 +63,12 @@ struct GUIDetailView: View {
                 }
                 .padding()
             }
-            HStack {
+            HStack { // MARK: Status bar
                 Spacer()
                 let files: String = {
                     let filesCount = model.currentDirectoryFiles.count.formatted()
                     if model.selectedFiles.isEmpty {
-                        return "\(filesCount) item(s)"
+                        return "\(filesCount) item(s)" // FIXME: adopt string catalog
                     }
                     else {
                         return "\(model.selectedFiles.count) of \(filesCount) selected"
@@ -95,6 +96,7 @@ struct GUIDetailView: View {
     }
 }
 
+@_documentation(visibility: private)
 struct GUIDetailView_Previews: PreviewProvider {
     static var previews: some View {
         GUIDetailView()

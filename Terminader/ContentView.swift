@@ -9,11 +9,12 @@ import SwiftUI
 
 struct ContentView: View {
     @ObservedObject var model: ContentViewModel
+    /// Whether the window is in GUI mode or CLI mode.
     @State var isGUI: Bool = true
     
     var body: some View {
         NavigationSplitView {
-            List {
+            List { // MARK: Sidebar
                 Section("Favorites") {
                     ForEach(model.favorites) { favorite in
                         Button {
@@ -44,7 +45,7 @@ struct ContentView: View {
             }
         }
         .toolbar {
-            ToolbarItem(placement: .navigation) {
+            ToolbarItem(placement: .navigation) { // MARK: Back button
                 Button {
                     model.goBack()
                 } label: {
@@ -54,7 +55,7 @@ struct ContentView: View {
                 .help("See folders you viewed previously")
             }
             
-            ToolbarItem(placement: .navigation) {
+            ToolbarItem(placement: .navigation) { // MARK: Forward button
                 Button {
                     model.goForward()
                 } label: {
@@ -63,7 +64,7 @@ struct ContentView: View {
                 .disabled(!model.canGoForward())
             }
             
-            ToolbarItem(placement: .navigation) {
+            ToolbarItem(placement: .navigation) { // MARK: Path components picker
                 Picker("", selection: $model.selectedPathComponent) {
                     ForEach(0..<model.pathComponentsArray.count, id: \.self) { index in
                         // HACK: the trailing space prevents the picker from truncating the item
@@ -72,7 +73,7 @@ struct ContentView: View {
                 }
             }
             
-            ToolbarItem {
+            ToolbarItem { // MARK: GUI/CLI (Terminal/Finder) toggle
                 Button {
                     isGUI.toggle()
                 } label: {
@@ -86,6 +87,7 @@ struct ContentView: View {
     }
 }
 
+@_documentation(visibility: private)
 struct ContentView_Previews: PreviewProvider {
     static var previews: some View {
         ContentView(model: ContentViewModel())

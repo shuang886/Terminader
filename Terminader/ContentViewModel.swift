@@ -7,26 +7,41 @@
 
 import SwiftUI
 
+/// Represents a file or directory in the filesystem.
 struct File: Identifiable, Codable, Hashable {
     var id = UUID()
     let url: URL
+    /// Human-readable name of the file.
     var name: String { url.localizedName ?? url.lastPathComponent }
+    /// SF Symbol name to use for the main view.
     var icon: (String, Color?) { (url.isDirectory ?? false) ? ("folder.fill", .cyan) : ("doc", nil) }
+    /// SF Symbol name to use for the sidebar view.
     var sidebarIcon: String?
 }
 
+/// Main model representing the filesystem and browsing context.
 class ContentViewModel: ObservableObject {
+    /// Index of current directory into `navigationHistory`. This enables the user to browse back and forward.
     @Published var currentDirectoryIndex: Int {
         didSet {
             currentDirectoryDidChange()
         }
     }
+    /// Cached list of files in the current directory, regenerated whenever the current directory changes.
     @Published var currentDirectoryFiles: [File] = []
+    /// List of directories to present in the Favorites section of the sidebar.
     @Published var favorites: [File] = []
+    /// Size of file/directory icons in the main view.
     @Published var iconSize: CGFloat = 72
+    /// Represents the user's browsing history.
     @Published var navigationHistory: [File]
+    /// Ordered list of path components from the current directory down to (but does not include) the root directory.
     @Published var pathComponentsArray: [File] = []
+    /// List of currently-selected files.
     @Published var selectedFiles: Set<File> = []
+    /// Currently-selected item in `pathComponentsArray`. This will generally be 0 except right after the user
+    /// selects a different item, in which case pathComponentsArray is immediately truncated to the new current
+    /// directory and selectedPathComponent is reset to 0.
     @Published var selectedPathComponent: Int = 0 {
         didSet {
             if selectedPathComponent != 0 {
@@ -34,10 +49,14 @@ class ContentViewModel: ObservableObject {
             }
         }
     }
+    /// List of `CLIOutput`s representing the standard output.
     @Published var stdoutConsole: [CLIOutput] = []
+    /// List of `CLIOutput`s representing the error output.
     @Published var stderrConsole: [CLIOutput] = []
     
+    /// Convenience to get the current directory.
     var currentDirectory: File { navigationHistory[currentDirectoryIndex] }
+    /// Free space in the disk volume of the current directory.
     var availableSpace: Measurement<UnitInformationStorage>? {
         if let dictionary = try? FileManager.default.attributesOfFileSystem(forPath: currentDirectory.url.path),
            let freeSize = dictionary[FileAttributeKey.systemFreeSize] as? NSNumber {
@@ -63,6 +82,8 @@ class ContentViewModel: ObservableObject {
         currentDirectoryDidChange()
     }
     
+    /// Navigates to the specified directory. Any forward history would be lost.
+    /// - Parameters: Directory to navigate to.
     func open(_ file: File) {
         if file.url.isDirectory ?? false {
             // remove forward history, if any
@@ -73,27 +94,36 @@ class ContentViewModel: ObservableObject {
         }
     }
     
+    /// Whether back history navigation exists.
+    /// - Returns: Whether the user is able to go back.
     func canGoBack() -> Bool
     {
         currentDirectoryIndex > 0
     }
     
+    /// Go back to the previous entry in the navigation history.
     func goBack() {
         if canGoBack() {
             currentDirectoryIndex -= 1
         }
     }
     
+    /// Whether forward navigation history exists.
+    /// - Returns: Whether the user is able to go forward.
     func canGoForward() -> Bool {
         currentDirectoryIndex < navigationHistory.count - 1
     }
     
+    /// Go forward to the next entry in the navigation history.
     func goForward() {
         if canGoForward() {
             currentDirectoryIndex += 1
         }
     }
     
+    /// Select a file or directory.
+    /// - Parameter file: The file or directory to select.
+    /// - Parameter add: Whether to replace the current selection or to add to it.
     func select(_ file: File, add: Bool = false) {
         if add {
             selectedFiles.insert(file)
@@ -103,12 +133,17 @@ class ContentViewModel: ObservableObject {
         }
     }
     
+    /// Deselect a file or directory.
+    /// - Parameter file: The file or directory to deselect.
     func deselect(_ file: File) {
         selectedFiles.remove(file)
     }
     
-    var stdoutString: String?
+    private var stdoutString: String?
     
+    /// Execute a command.
+    /// - Parameter prompt: Command prompt displayed at the time of command issuance.
+    /// - Parameter command: Command entered by the user.
     func run(prompt: String, command: String) {
         let command = command.trimmingCharacters(in: .newlines)
         
@@ -122,6 +157,7 @@ class ContentViewModel: ObservableObject {
         case "deselect":
             deselect(commandParts)
         default:
+            // https://stackoverflow.com/questions/55228685/opening-new-pseudo-terminal-device-file-in-macos-with-swift
             let task = Process()
             let masterFD = posix_openpt(O_RDWR)
             grantpt(masterFD)
@@ -144,6 +180,9 @@ class ContentViewModel: ObservableObject {
             
             stdoutString = ""
             masterFile.readabilityHandler = { [self] _ in
+                // Accumulate everything in stdoutString for now, because the CLI wants to know
+                // the termination reason to draw the colored borders correctly.
+                // FIXME: display partial output in the CLI, perhaps with a different border color
                 let stdoutData = masterFile.availableData
                 stdoutString! += String(data: stdoutData, encoding: .utf8) ?? ""
             }
@@ -152,6 +191,7 @@ class ContentViewModel: ObservableObject {
                 masterFile.readabilityHandler = nil
                 
                 DispatchQueue.main.async { [self] in
+                    // Nobody puts ANSI escape sequences into stderr, right?
                     let stderrData = stderrPipe.fileHandleForReading.readDataToEndOfFile()
                     let stderrString = String(data: stderrData, encoding: .utf8)!.trimmingCharacters(in: .newlines)
                     if !stderrString.isEmpty {
@@ -163,13 +203,14 @@ class ContentViewModel: ObservableObject {
                     
                     stdoutString = stdoutString?.trimmingCharacters(in: .newlines)
                     if task.terminationReason.rawValue != 0 && stdoutString!.isEmpty && !stderrString.isEmpty {
-                        // special case: error termination reason and no stdout, so copy the stderr output instead
+                        // Special case: error termination reason and no stdout, so copy the stderr output instead
                         stdoutConsole.append(CLITextOutput(prompt: prompt,
                                                            command: command,
                                                            terminationStatus: task.terminationStatus,
                                                            text: AttributedString(stderrString)))
                     }
                     else {
+                        // Process stdout through our ANSI parser.
                         stdoutConsole.append(CLITextOutput(prompt: prompt,
                                                            command: command,
                                                            terminationStatus: task.terminationStatus,
@@ -181,10 +222,13 @@ class ContentViewModel: ObservableObject {
             do {
                 try task.run()
             } catch {
+                fatalError("task failed to run")
             }
         }
     }
     
+    /// Internal command to change current directory
+    /// - Parameter commandParts: Array of command-line parameters, including the command itself.
     private func chdir(_ commandParts: [String]) {
         let destination: URL? = {
             if commandParts.count == 1 || commandParts[1].isEmpty {
@@ -205,6 +249,8 @@ class ContentViewModel: ObservableObject {
         }
     }
     
+    /// Internal command to select specified files and directories.
+    /// - Parameter commandParts: Array of command-line parameters, including the command itself. The '*' and '?' wildcard characters are honored.
     private func select(_ commandParts: [String]) {
         for part in commandParts.dropFirst(1) where !part.isEmpty {
             for currentDirectoryFile in currentDirectoryFiles {
@@ -215,6 +261,8 @@ class ContentViewModel: ObservableObject {
         }
     }
     
+    /// Internal command to deselect specified files and directories.
+    /// - Parameter commandParts: Array of command-line parameters, including the command itself. The '*' and '?' wildcard characters are honored.
     private func deselect(_ commandParts: [String]) {
         for part in commandParts.dropFirst(1) where !part.isEmpty {
             for currentDirectoryFile in currentDirectoryFiles {
@@ -225,6 +273,7 @@ class ContentViewModel: ObservableObject {
         }
     }
     
+    /// Handles a change to the current directory by republishing variables that reflect the new state.
     private func currentDirectoryDidChange() {
         do {
             // list the files in the new current directory
@@ -244,6 +293,7 @@ class ContentViewModel: ObservableObject {
             }
             selectedPathComponent = 0
         } catch {
+            fatalError("file manager failed to read current directory")
         }
     }
 }
@@ -256,6 +306,8 @@ extension URL {
 }
 
 extension String {
+    /// Returns whether the receiver matches a supplied wildcard pattern.
+    /// - Parameter pattern: Wildcard pattern that may include the '*' or '?' characters.
     func matchesWildcard(_ pattern: String) -> Bool {
         // Translated from https://www.geeksforgeeks.org/wildcard-pattern-matching/
         // Variable names kept to match source
@@ -297,153 +349,5 @@ extension String {
             j = pattern.index(after: j)
         }
         return j == m
-    }
-}
-
-extension AttributedString {
-    static func create(fromANSI string: String) -> AttributedString {
-        var state = 0
-        var output = AttributedString("")
-        var chars: [Character] = []
-        
-        let baseFont: Font = .body.monospaced()
-        var fgColor: Int?
-        var bgColor: Int?
-        var bold = false
-        var italic = false
-        var underline = false
-        
-        var p1: Int?
-        var p2: Int?
-        
-        let outputChars = {
-            if !chars.isEmpty {
-                var attrString = AttributedString(chars)
-                var font = baseFont
-                if bold {
-                    font = font.bold()
-                }
-                if italic {
-                    font = font.italic()
-                }
-                attrString.font = font
-                if underline {
-                    attrString.underlineStyle = .single
-                }
-                attrString.foregroundColor = Color.create(fromANSI: fgColor)
-                attrString.backgroundColor = Color.create(fromANSI: bgColor)
-                output += attrString
-                chars = []
-            }
-        }
-        
-        for char in string {
-            switch state {
-            case 0:
-                if char == "\u{1B}" {
-                    outputChars()
-                    p1 = nil
-                    p2 = nil
-                    state = 1
-                }
-                else {
-                    chars.append(char)
-                }
-            case 1:
-                state = (char == "[") ? 2 : 0
-            case 2:
-                if char.isNumber {
-                    p1 = (p1 ?? 0) * 10 + (char.wholeNumberValue ?? 0)
-                }
-                else if char == ";" {
-                    state = 3
-                }
-                else if char == "?" {
-                    state = 100
-                }
-                else if char == "m" {
-                    switch p1! {
-                    case 0:
-                        bold = false
-                        italic = false
-                        underline = false
-                        italic = false
-                        fgColor = nil
-                        bgColor = nil
-                    case 1:
-                        bold = true
-                    case 3:
-                        italic = true
-                    case 4:
-                        underline = true
-                    case 24:
-                        underline = false
-                    case 30...37, 90...97:
-                        fgColor = p1
-                    case 39:
-                        fgColor = nil
-                    default:
-                        break
-                    }
-                    state = 0
-                }
-                else {
-                    state = 0
-                }
-            case 3:
-                if char.isNumber {
-                    p2 = (p2 ?? 0) * 10 + (char.wholeNumberValue ?? 0)
-                }
-                else if char == "m" {
-                    switch p2! {
-                    case 40...47, 100...107:
-                        bgColor = p2
-                    case 49:
-                        bgColor = nil
-                    default:
-                        break
-                    }
-                    state = 0
-                }
-                else {
-                    state = 0
-                }
-            case 100:
-                if char == "h" {
-                    state = 0
-                }
-            default:
-                fatalError("invalid state")
-            }
-        }
-        outputChars()
-        return output
-    }
-}
-
-extension Color {
-    static func create(fromANSI: Int?) -> Color? {
-        guard let fromANSI else { return nil }
-        switch fromANSI {
-        case 39:      return Color(NSColor.textColor)
-        case 49:      return Color(NSColor.textBackgroundColor)
-        case 30, 40:  return Color("ANSIBlackColor")
-        case 31, 41:  return Color("ANSIRedColor")
-        case 32, 42:  return Color("ANSIGreenColor")
-        case 33, 43:  return Color("ANSIYellowColor")
-        case 34, 44:  return Color("ANSIBlueColor")
-        case 35, 45:  return Color("ANSIMagentaColor")
-        case 36, 46:  return Color("ANSICyanColor")
-        case 37, 47:  return Color("ANSIWhiteColor")
-        case 90, 100: return Color("ANSIBrightBlackColor")
-        case 91, 101: return Color("ANSIBrightRedColor")
-        case 92, 102: return Color("ANSIBrightGreenColor")
-        case 93, 103: return Color("ANSIBrightYellowColor")
-        case 94, 104: return Color("ANSIBrightBlueColor")
-        case 95, 105: return Color("ANSIBrightMagentaColor")
-        case 96, 106: return Color("ANSIBrightCyanColor")
-        case 97, 107: return Color("ANSIBrightWhiteColor")
-        default: return nil
-        }
     }
 }

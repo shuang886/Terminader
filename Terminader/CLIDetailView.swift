@@ -20,10 +20,15 @@ enum CLIPane: CaseIterable, Identifiable {
     }
 }
 
+/// Represents a single exchange of CLI command and resulting output.
 class CLIOutput: Identifiable, Equatable, Hashable, Codable {
+    /// Unique identifier
     var id = UUID()
+    /// Command prompt at the time of issuance, mainly to mimic the look of a shell interface.
     var prompt: String = ""
+    /// Command from the user.
     var command: String = ""
+    /// Termination status of the application.
     var terminationStatus: Int32 = 0
     
     init(prompt: String, command: String, terminationStatus: Int32) {
@@ -41,7 +46,9 @@ class CLIOutput: Identifiable, Equatable, Hashable, Codable {
     }
 }
 
+/// A `CLIOutput` that contains only text, used by legacy applications.
 class CLITextOutput: CLIOutput {
+    /// String containing the output from the application, after certain ANSI escape sequences were parsed.
     var text: AttributedString
     private enum CodingKeys: String, CodingKey { case text }
     
@@ -57,6 +64,7 @@ class CLITextOutput: CLIOutput {
     }
 }
 
+/// Renders the CLI (terminal) interface.
 struct CLIDetailView: View {
     @EnvironmentObject private var model: ContentViewModel
     @State private var selectedPane = CLIPane.console
@@ -67,7 +75,7 @@ struct CLIDetailView: View {
     var body: some View {
         VStack(spacing: 0) {
             HStack(spacing: 8) {
-                Button {
+                Button { // MARK: Paste selection button
                     command = command.trimmingCharacters(in: .whitespaces)
                     for file in model.selectedFiles {
                         command += " " + file.url.path
@@ -120,7 +128,7 @@ struct CLIDetailView: View {
                 }
                 .help("Paste selected items")
                 
-                Picker("", selection: $selectedPane, content: {
+                Picker("", selection: $selectedPane, content: { // MARK: Console/Error segmented control
                     ForEach(CLIPane.allCases, content: { pane in
                         Text(pane.localizedString)
                     })
@@ -141,11 +149,15 @@ struct CLIDetailView: View {
     }
 }
 
+/// Renders a history of commands and their output, approximating a terminal emulator.
 struct ConsoleView: View {
     @EnvironmentObject private var model: ContentViewModel
+    /// Current command.
     @Binding var command: String
     @FocusState private var isFocused: Bool
+    /// Console history.
     @Binding var console: [CLIOutput]
+    /// Whether this is the error console (stderr).
     var isStderr = false
     
     private let terminalFont = Font.system(size: 12).monospaced()
@@ -154,7 +166,7 @@ struct ConsoleView: View {
     var body: some View {
         ScrollViewReader { proxy in
             VStack(spacing: 0) {
-                ScrollView {
+                ScrollView { // MARK: Command history
                     ForEach(console) { consoleItem in
                         ConsoleItemView(isStderr: isStderr, isGrouped: true, consoleItem: consoleItem, terminalFont: terminalFont)
                             .onChange(of: console) { _ in
@@ -169,7 +181,7 @@ struct ConsoleView: View {
                         .id(bottomID)
                 }
                 
-                HStack(alignment: .top, spacing: 0) {
+                HStack(alignment: .top, spacing: 0) { // MARK: Command prompt text field
                     Text("\(model.currentDirectory.name) \(Image(systemName: "arrow.right.circle")) ")
                         .font(terminalFont)
                         .foregroundColor(.green)
@@ -201,10 +213,15 @@ struct ConsoleView: View {
     }
 }
 
+/// Renders a command and its output
 struct ConsoleItemView: View {
+    /// Whether the item was emitted to the error stream (stderr).
     var isStderr = false
+    /// Whether the item should be rendered as a group (suitable for the CLI history console) or not (suitable for the pop-out window).
     var isGrouped = false
+    /// Item to render.
     var consoleItem: CLIOutput
+    /// Font to use.
     var terminalFont: Font
     
     @Environment(\.openWindow) private var openWindow
@@ -221,18 +238,18 @@ struct ConsoleItemView: View {
             if isGrouped {
                 VStack {
                     HStack(alignment: .top, spacing: 0) {
-                        Text(textItem.prompt)
+                        Text(textItem.prompt) // MARK: Prompt and command
                         Text(textItem.command)
                             .fontWeight(.bold)
                         
                         Spacer()
                         
-                        if textItem.terminationStatus != 0 {
+                        if textItem.terminationStatus != 0 { // MARK: Termination status
                             Image(systemName: "return.right")
                             Text("\(textItem.terminationStatus)")
                         }
                         
-                        Button {
+                        Button { // MARK: Pop-out button
                             openWindow(value: consoleItem)
                         } label: {
                             Image(systemName: "rectangle.portrait.and.arrow.forward")
@@ -247,7 +264,7 @@ struct ConsoleItemView: View {
                     .foregroundColor(Color(NSColor.textBackgroundColor))
                     .background(Rectangle().fill(color))
                     
-                    Text(textItem.text)
+                    Text(textItem.text) // MARK: Command output
                         .lineLimit(nil)
                         .frame(maxWidth: .infinity, alignment: .leading)
                         .font(terminalFont)
@@ -260,7 +277,7 @@ struct ConsoleItemView: View {
                 .padding(.vertical, 1)
             }
             else {
-                Text(textItem.text)
+                Text(textItem.text) // MARK: Command output for pop-out window
                     .lineLimit(nil)
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .font(terminalFont)
@@ -272,6 +289,7 @@ struct ConsoleItemView: View {
     }
 }
 
+@_documentation(visibility: private)
 struct CLIDetailView_Previews: PreviewProvider {
     static var previews: some View {
         CLIDetailView()
