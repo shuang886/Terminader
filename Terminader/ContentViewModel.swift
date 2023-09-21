@@ -153,9 +153,19 @@ class ContentViewModel: ObservableObject {
         case "cd":
             chdir(commandParts)
         case "select":
-            select(commandParts)
+            if let output = select(commandParts) {
+                stdoutConsole.append(CLITextOutput(prompt: prompt,
+                                                   command: command,
+                                                   terminationStatus: 0,
+                                                   text: AttributedString(output)))
+            }
         case "deselect":
-            deselect(commandParts)
+            if let output = deselect(commandParts) {
+                stdoutConsole.append(CLITextOutput(prompt: prompt,
+                                                   command: command,
+                                                   terminationStatus: 0,
+                                                   text: AttributedString(output)))
+            }
         default:
             // https://stackoverflow.com/questions/55228685/opening-new-pseudo-terminal-device-file-in-macos-with-swift
             let task = Process()
@@ -251,26 +261,50 @@ class ContentViewModel: ObservableObject {
     
     /// Internal command to select specified files and directories.
     /// - Parameter commandParts: Array of command-line parameters, including the command itself. The '*' and '?' wildcard characters are honored.
-    private func select(_ commandParts: [String]) {
-        for part in commandParts.dropFirst(1) where !part.isEmpty {
-            for currentDirectoryFile in currentDirectoryFiles {
-                if currentDirectoryFile.url.lastPathComponent.matchesWildcard(part) {
-                    selectedFiles.insert(currentDirectoryFile)
+    private func select(_ commandParts: [String]) -> String? {
+        if commandParts.count == 1 {
+            let unselected = currentDirectoryFiles.filter { !selectedFiles.contains($0) }
+            if unselected.isEmpty {
+                return String(localized: "All items already selected.")
+            }
+            else {
+                return unselected.reduce(String(localized: "Candidates:"), { $0.isEmpty ? $1.name : $0 + "\n" + $1.name })
+            }
+        }
+        else {
+            for part in commandParts.dropFirst(1) where !part.isEmpty {
+                for currentDirectoryFile in currentDirectoryFiles {
+                    if currentDirectoryFile.url.lastPathComponent.matchesWildcard(part) {
+                        selectedFiles.insert(currentDirectoryFile)
+                    }
                 }
             }
         }
+        return nil
     }
     
     /// Internal command to deselect specified files and directories.
     /// - Parameter commandParts: Array of command-line parameters, including the command itself. The '*' and '?' wildcard characters are honored.
-    private func deselect(_ commandParts: [String]) {
-        for part in commandParts.dropFirst(1) where !part.isEmpty {
-            for currentDirectoryFile in currentDirectoryFiles {
-                if currentDirectoryFile.url.lastPathComponent.matchesWildcard(part) {
-                    selectedFiles.remove(currentDirectoryFile)
+    private func deselect(_ commandParts: [String]) -> String? {
+        if commandParts.count == 1 {
+            let selected = currentDirectoryFiles.filter { selectedFiles.contains($0) }
+            if selected.isEmpty {
+                return String(localized: "No items selected.")
+            }
+            else {
+                return selected.reduce(String(localized: "Candidates:"), { $0.isEmpty ? $1.name : $0 + "\n" + $1.name })
+            }
+        }
+        else {
+            for part in commandParts.dropFirst(1) where !part.isEmpty {
+                for currentDirectoryFile in currentDirectoryFiles {
+                    if currentDirectoryFile.url.lastPathComponent.matchesWildcard(part) {
+                        selectedFiles.remove(currentDirectoryFile)
+                    }
                 }
             }
         }
+        return nil
     }
     
     /// Handles a change to the current directory by republishing variables that reflect the new state.
