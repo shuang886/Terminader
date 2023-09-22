@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import EonilFSEvents
 
 /// Represents a file or directory in the filesystem.
 struct File: Identifiable, Codable, Hashable {
@@ -80,6 +81,7 @@ class ContentViewModel: ObservableObject {
     @Published var currentDirectoryIndex: Int {
         didSet {
             currentDirectoryDidChange()
+            watchCurrentDirectory()
         }
     }
     /// Cached list of files in the current directory, regenerated whenever the current directory changes.
@@ -145,6 +147,11 @@ class ContentViewModel: ObservableObject {
         ]
         
         currentDirectoryDidChange()
+        watchCurrentDirectory()
+    }
+    
+    deinit {
+        EonilFSEvents.stopWatching(for: ObjectIdentifier(self))
     }
     
     /// Navigates to the specified directory. Any forward history would be lost.
@@ -509,6 +516,34 @@ class ContentViewModel: ObservableObject {
         return nil
     }
     
+    /// Stop watching current directory. The flag avoids an assertion in stopWatching() checking for
+    /// callers that aren't actually watching.
+    private var watchingDirectory = false
+    private func stopWatchingDirectory() {
+        if watchingDirectory {
+            EonilFSEvents.stopWatching(for: ObjectIdentifier(self))
+        }
+    }
+    
+    /// Monitor current directory for changes.
+    private func watchCurrentDirectory() {
+        stopWatchingDirectory()
+        do {
+            try EonilFSEvents.startWatching(
+                paths: [currentDirectory.url.path],
+                for: ObjectIdentifier(self),
+                with: { [self] event in
+                    let url = URL(filePath: event.path)
+                    let directory = url.deletingLastPathComponent()
+                    if directory == currentDirectory.url {
+                        currentDirectoryDidChange()
+                    }
+                })
+        } catch {
+            fatalError("unable to watch current directory")
+        }
+    }
+    
     /// Handles a change to the current directory by republishing variables that reflect the new state.
     private func currentDirectoryDidChange() {
         do {
@@ -528,6 +563,16 @@ class ContentViewModel: ObservableObject {
                 directory = File(url: directory.url.deletingLastPathComponent())
             }
             selectedPathComponent = 0
+            
+            // make sure selected files only contains files that still exist.
+            // FIXME: can't just use intersection() because the currentDirectoryFiles have new ids
+            var newSelectedFiles: Set<File> = []
+            for item in selectedFiles {
+                if let file = currentDirectoryFiles.first(where: { $0.url == item.url }) {
+                    newSelectedFiles.insert(file)
+                }
+            }
+            selectedFiles = newSelectedFiles
         } catch {
             fatalError("file manager failed to read current directory")
         }

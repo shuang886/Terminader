@@ -20,6 +20,7 @@
 		B06CAEC82ABA251800405BAC /* ContentViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = B06CAEC72ABA251800405BAC /* ContentViewModel.swift */; };
 		B090726F2ABE1CB900D59DA1 /* main.swift in Sources */ = {isa = PBXBuildFile; fileRef = B090726E2ABE1CB900D59DA1 /* main.swift */; };
 		B09072762ABE1E3100D59DA1 /* cat in Embed Commands */ = {isa = PBXBuildFile; fileRef = B090726C2ABE1CB900D59DA1 /* cat */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
+		B09072792ABE3BC200D59DA1 /* EonilFSEvents in Frameworks */ = {isa = PBXBuildFile; productRef = B09072782ABE3BC200D59DA1 /* EonilFSEvents */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -78,6 +79,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				B09072792ABE3BC200D59DA1 /* EonilFSEvents in Frameworks */,
 				B06CAEC42ABA1FF200405BAC /* WrappingHStack in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -160,12 +162,14 @@
 			buildRules = (
 			);
 			dependencies = (
+				B090727B2ABE3C2400D59DA1 /* PBXTargetDependency */,
 				B09072742ABE1DDF00D59DA1 /* PBXTargetDependency */,
 				B06CAEC62ABA200400405BAC /* PBXTargetDependency */,
 			);
 			name = Terminader;
 			packageProductDependencies = (
 				B06CAEC32ABA1FF200405BAC /* WrappingHStack */,
+				B09072782ABE3BC200D59DA1 /* EonilFSEvents */,
 			);
 			productName = Terminader;
 			productReference = B06CAEB02ABA170500405BAC /* Terminader.app */;
@@ -217,6 +221,7 @@
 			mainGroup = B06CAEA72ABA170500405BAC;
 			packageReferences = (
 				B06CAEC22ABA1FF200405BAC /* XCRemoteSwiftPackageReference "WrappingHStack" */,
+				B09072772ABE3BC200D59DA1 /* XCRemoteSwiftPackageReference "FSEvents" */,
 			);
 			productRefGroup = B06CAEB12ABA170500405BAC /* Products */;
 			projectDirPath = "";
@@ -275,6 +280,10 @@
 			isa = PBXTargetDependency;
 			target = B090726B2ABE1CB900D59DA1 /* cat */;
 			targetProxy = B09072732ABE1DDF00D59DA1 /* PBXContainerItemProxy */;
+		};
+		B090727B2ABE3C2400D59DA1 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			productRef = B090727A2ABE3C2400D59DA1 /* EonilFSEvents */;
 		};
 /* End PBXTargetDependency section */
 
@@ -513,6 +522,14 @@
 				minimumVersion = 0.1.3;
 			};
 		};
+		B09072772ABE3BC200D59DA1 /* XCRemoteSwiftPackageReference "FSEvents" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/eonil/FSEvents.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 0.1.7;
+			};
+		};
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
@@ -525,6 +542,16 @@
 			isa = XCSwiftPackageProductDependency;
 			package = B06CAEC22ABA1FF200405BAC /* XCRemoteSwiftPackageReference "WrappingHStack" */;
 			productName = WrappingHStack;
+		};
+		B09072782ABE3BC200D59DA1 /* EonilFSEvents */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = B09072772ABE3BC200D59DA1 /* XCRemoteSwiftPackageReference "FSEvents" */;
+			productName = EonilFSEvents;
+		};
+		B090727A2ABE3C2400D59DA1 /* EonilFSEvents */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = B09072772ABE3BC200D59DA1 /* XCRemoteSwiftPackageReference "FSEvents" */;
+			productName = EonilFSEvents;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};
