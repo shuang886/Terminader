@@ -34,7 +34,8 @@ struct CLIDetailView: View {
                 Button { // MARK: Paste selection button
                     command = command.trimmingCharacters(in: .whitespaces)
                     for file in model.selectedFiles {
-                        command += " " + file.url.path
+                        let path = file.url.path.replacingOccurrences(of: " ", with: "\\ ")
+                        command += " " + path
                     }
                 } label: {
                     Image(systemName: "arrow.down.doc")
