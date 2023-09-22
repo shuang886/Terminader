@@ -215,7 +215,7 @@ class ContentViewModel: ObservableObject {
         let originalCommand = command
         
         // FIXME: need to handle quotes and backslash escapes
-        var commandParts = command.components(separatedBy: .whitespacesAndNewlines)
+        let commandParts = command.components(separatedBy: .whitespacesAndNewlines)
         switch commandParts[0] {
         case "cd":
             chdir(commandParts)
@@ -235,8 +235,7 @@ class ContentViewModel: ObservableObject {
             }
         default:
             if let bundledCommand = Bundle.main.url(forResource: commandParts[0], withExtension: nil, subdirectory: "scripts") {
-                commandParts[0] = bundledCommand.path
-                command = commandParts.joined(separator: " ")
+                command = bundledCommand.path + command.dropFirst(commandParts[0].count)
             }
             
             // https://stackoverflow.com/questions/55228685/opening-new-pseudo-terminal-device-file-in-macos-with-swift
