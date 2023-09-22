@@ -244,6 +244,8 @@ class ContentViewModel: ObservableObject {
             runAndOutput(deselect)
         case "history":
             runAndOutput(history)
+        case "pwd":
+            runAndOutput(pwd)
         case "select":
             runAndOutput(select)
         default:
@@ -344,6 +346,42 @@ class ContentViewModel: ObservableObject {
         }
     }
     
+    /// Handles a change to consoleFilter by refiltering stdoutConsole.
+    private func stdoutConsoleFilterDidChange() {
+        stdoutConsole = unfilteredStdoutConsole.filter { output in
+            if consoleFilter.isEmpty {
+                return true
+            }
+            if output.command.localizedCaseInsensitiveContains(consoleFilter) {
+                return true
+            }
+            if let textOutput = output as? CLITextOutput,
+               String(textOutput.text.characters).localizedCaseInsensitiveContains(consoleFilter) {
+                return true
+            }
+            return false
+        }
+    }
+    
+    /// Handles a change to consoleFilter by refiltering stderrConsole.
+    private func stderrConsoleFilterDidChange() {
+        stderrConsole = unfilteredStderrConsole.filter { output in
+            if consoleFilter.isEmpty {
+                return true
+            }
+            if output.command.localizedCaseInsensitiveContains(consoleFilter) {
+                return true
+            }
+            if let textOutput = output as? CLITextOutput,
+               String(textOutput.text.characters).localizedCaseInsensitiveContains(consoleFilter) {
+                return true
+            }
+            return false
+        }
+    }
+    
+    // MARK: - Internal commands
+    
     /// Internal command to change current directory
     /// - Parameter commandParts: Array of command-line parameters, including the command itself.
     private func chdir(_ commandParts: [String]) {
@@ -364,6 +402,30 @@ class ContentViewModel: ObservableObject {
         if let destination {
             open(File(url: destination))
         }
+    }
+    
+    /// Internal command to deselect specified files and directories.
+    /// - Parameter commandParts: Array of command-line parameters, including the command itself. The '*' and '?' wildcard characters are honored.
+    private func deselect(_ commandParts: [String]) throws -> String? {
+        if commandParts.count == 1 {
+            let selected = currentDirectoryFiles.filter { selectedFiles.contains($0) }
+            if selected.isEmpty {
+                return String(localized: "No items selected.")
+            }
+            else {
+                return selected.reduce(String(localized: "Candidates:"), { $0.isEmpty ? $1.name : $0 + "\n" + $1.name })
+            }
+        }
+        else {
+            for part in commandParts.dropFirst(1) where !part.isEmpty {
+                for currentDirectoryFile in currentDirectoryFiles {
+                    if currentDirectoryFile.url.lastPathComponent.matchesWildcard(part) {
+                        selectedFiles.remove(currentDirectoryFile)
+                    }
+                }
+            }
+        }
+        return nil
     }
     
     /// Internal command to list command history.
@@ -396,28 +458,28 @@ class ContentViewModel: ObservableObject {
         return output
     }
     
-    /// Internal command to deselect specified files and directories.
-    /// - Parameter commandParts: Array of command-line parameters, including the command itself. The '*' and '?' wildcard characters are honored.
-    private func deselect(_ commandParts: [String]) throws -> String? {
-        if commandParts.count == 1 {
-            let selected = currentDirectoryFiles.filter { selectedFiles.contains($0) }
-            if selected.isEmpty {
-                return String(localized: "No items selected.")
+    /// Internal command to display or manipuate the current working directory.
+    /// - Parameter commandParts: Array of command-line parameters, including the command itself.
+    private func pwd(_ commandParts: [String]) throws -> String? {
+        if commandParts.count > 1 {
+            if commandParts[1].hasPrefix("b") {
+                if canGoBack() {
+                    goBack()
+                }
+                else {
+                    throw "no back history"
+                }
             }
-            else {
-                return selected.reduce(String(localized: "Candidates:"), { $0.isEmpty ? $1.name : $0 + "\n" + $1.name })
-            }
-        }
-        else {
-            for part in commandParts.dropFirst(1) where !part.isEmpty {
-                for currentDirectoryFile in currentDirectoryFiles {
-                    if currentDirectoryFile.url.lastPathComponent.matchesWildcard(part) {
-                        selectedFiles.remove(currentDirectoryFile)
-                    }
+            else if commandParts[1].hasPrefix("f") {
+                if canGoForward() {
+                    goForward()
+                }
+                else {
+                    throw "no forward history"
                 }
             }
         }
-        return nil
+        return currentDirectory.url.path
     }
     
     /// Internal command to select specified files and directories.
@@ -465,40 +527,6 @@ class ContentViewModel: ObservableObject {
             selectedPathComponent = 0
         } catch {
             fatalError("file manager failed to read current directory")
-        }
-    }
-    
-    /// Handles a change to consoleFilter by refiltering stdoutConsole.
-    private func stdoutConsoleFilterDidChange() {
-        stdoutConsole = unfilteredStdoutConsole.filter { output in
-            if consoleFilter.isEmpty {
-                return true
-            }
-            if output.command.localizedCaseInsensitiveContains(consoleFilter) {
-                return true
-            }
-            if let textOutput = output as? CLITextOutput,
-               String(textOutput.text.characters).localizedCaseInsensitiveContains(consoleFilter) {
-                return true
-            }
-            return false
-        }
-    }
-    
-    /// Handles a change to consoleFilter by refiltering stderrConsole.
-    private func stderrConsoleFilterDidChange() {
-        stderrConsole = unfilteredStderrConsole.filter { output in
-            if consoleFilter.isEmpty {
-                return true
-            }
-            if output.command.localizedCaseInsensitiveContains(consoleFilter) {
-                return true
-            }
-            if let textOutput = output as? CLITextOutput,
-               String(textOutput.text.characters).localizedCaseInsensitiveContains(consoleFilter) {
-                return true
-            }
-            return false
         }
     }
 }
