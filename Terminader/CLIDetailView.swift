@@ -126,8 +126,8 @@ struct ConsoleView: View {
         ScrollViewReader { proxy in
             VStack(spacing: 0) {
                 ScrollView { // MARK: Command history
-                    ForEach(console) { consoleItem in
-                        ConsoleItemView(isStderr: isStderr, isGrouped: true, consoleItem: consoleItem, terminalFont: terminalFont)
+                    ForEach($console) { $consoleItem in
+                        ConsoleItemView(isStderr: isStderr, isGrouped: true, consoleItem: $consoleItem, terminalFont: terminalFont)
                             .onChange(of: console) { _ in
                                 DispatchQueue.main.async {
                                     proxy.scrollTo(bottomID)
@@ -177,12 +177,13 @@ struct ConsoleView: View {
 
 /// Renders a command and its output
 struct ConsoleItemView: View {
+    @EnvironmentObject private var model: ContentViewModel
     /// Whether the item was emitted to the error stream (stderr).
     var isStderr = false
     /// Whether the item should be rendered as a group (suitable for the CLI history console) or not (suitable for the pop-out window).
     var isGrouped = false
     /// Item to render.
-    var consoleItem: CLIOutput
+    @Binding var consoleItem: CLIOutput
     /// Font to use.
     var terminalFont: Font
     
@@ -191,9 +192,12 @@ struct ConsoleItemView: View {
     var body: some View {
         let color: Color = {
             if isStderr {
-                return Color.orange
+                return .orange
             }
-            return consoleItem.terminationStatus != 0 ? Color.red : Color.cyan
+            if let terminationStatus = consoleItem.terminationStatus {
+                return terminationStatus == 0 ? .green : .red
+            }
+            return .cyan
         }()
         
         if let textItem = consoleItem as? CLITextOutput {
@@ -210,11 +214,23 @@ struct ConsoleItemView: View {
                             .monospacedDigit()
                             .padding(.leading, 16)
                         
-                        if textItem.terminationStatus != 0 { // MARK: Termination status
-                            Image(systemName: "return.right")
-                                .padding(.leading, 16)
-                            Text("\(textItem.terminationStatus)")
+                        if let terminationStatus = textItem.terminationStatus {
+                            if terminationStatus != 0 { // MARK: Termination status
+                                Image(systemName: "return.right")
+                                    .padding(.leading, 16)
+                                Text("\(textItem.terminationStatus ?? 0)")
+                            }
                         }
+                        else {
+                            Button { // MARK: Stop task
+                                model.stop(textItem.id)
+                            } label: {
+                                Image(systemName: "exclamationmark.octagon")
+                                    .foregroundColor(Color(NSColor.textBackgroundColor))
+                            }
+                            .padding(.leading, 16)
+                            .buttonStyle(.plain)
+                       }
                         
                         Button { // MARK: Pop-out button
                             openWindow(value: consoleItem)

@@ -30,9 +30,9 @@ class CLIOutput: Identifiable, Equatable, Hashable, Codable {
     /// Command from the user.
     var command: String = ""
     /// Termination status of the application.
-    var terminationStatus: Int32 = 0
+    var terminationStatus: Int32?
     
-    init(prompt: String, command: String, terminationStatus: Int32) {
+    init(prompt: String, command: String, terminationStatus: Int32? = nil) {
         self.date = Date.now
         self.prompt = prompt
         self.command = command
@@ -54,7 +54,7 @@ class CLITextOutput: CLIOutput {
     var text: AttributedString
     private enum CodingKeys: String, CodingKey { case text }
     
-    init(prompt: String, command: String, terminationStatus: Int32, text: AttributedString) {
+    init(prompt: String, command: String, terminationStatus: Int32? = nil, text: AttributedString) {
         self.text = text
         super.init(prompt: prompt, command: command, terminationStatus: terminationStatus)
     }
@@ -205,6 +205,7 @@ class ContentViewModel: ObservableObject {
     }
     
     private var stdoutString: String?
+    private var runningTasks: [ UUID : Process ] = [:]
     
     /// Execute a command.
     /// - Parameter prompt: Command prompt displayed at the time of command issuance.
@@ -260,12 +261,27 @@ class ContentViewModel: ObservableObject {
             task.currentDirectoryURL = currentDirectory.url
             
             stdoutString = ""
+            let newOutput = CLITextOutput(prompt: prompt, command: originalCommand, text: AttributedString())
+            unfilteredStdoutConsole.append(newOutput)
+            
             masterFile.readabilityHandler = { [self] _ in
                 // Accumulate everything in stdoutString for now, because the CLI wants to know
                 // the termination reason to draw the colored borders correctly.
-                // FIXME: display partial output in the CLI, perhaps with a different border color
                 let stdoutData = masterFile.availableData
-                stdoutString! += String(data: stdoutData, encoding: .utf8) ?? ""
+                if let newArrival = String(data: stdoutData, encoding: .utf8) {
+                    stdoutString! += newArrival
+                    
+                    DispatchQueue.main.async { [self] in
+                        if let index = unfilteredStdoutConsole.firstIndex(of: newOutput) {
+                            let output = stdoutString!.trimmingCharacters(in: .newlines)
+                            (unfilteredStdoutConsole[index] as? CLITextOutput)?.text = AttributedString.create(fromANSI: output)
+                            stdoutConsoleFilterDidChange()
+                            
+                            stdoutConsole.append(CLIOutput(prompt: "", command: ""))
+                            stdoutConsole.removeLast()
+                        }
+                    }
+                }
             }
             
             task.terminationHandler = { [self] _ in
@@ -273,6 +289,7 @@ class ContentViewModel: ObservableObject {
                 
                 DispatchQueue.main.async { [self] in
                     // Nobody puts ANSI escape sequences into stderr, right?
+                    // FIXME: probably should display partial output for stderr as well
                     let stderrData = stderrPipe.fileHandleForReading.readDataToEndOfFile()
                     let stderrString = String(data: stderrData, encoding: .utf8)!.trimmingCharacters(in: .newlines)
                     if !stderrString.isEmpty {
@@ -283,28 +300,35 @@ class ContentViewModel: ObservableObject {
                     }
                     
                     stdoutString = stdoutString?.trimmingCharacters(in: .newlines)
-                    if task.terminationReason.rawValue != 0 && stdoutString!.isEmpty && !stderrString.isEmpty {
-                        // Special case: error termination reason and no stdout, so copy the stderr output instead
-                        unfilteredStdoutConsole.append(CLITextOutput(prompt: prompt,
-                                                                     command: originalCommand,
-                                                                     terminationStatus: task.terminationStatus,
-                                                                     text: AttributedString(stderrString)))
-                    }
-                    else {
-                        // Process stdout through our ANSI parser.
-                        unfilteredStdoutConsole.append(CLITextOutput(prompt: prompt,
-                                                                     command: originalCommand,
-                                                                     terminationStatus: task.terminationStatus,
-                                                                     text: AttributedString.create(fromANSI: stdoutString!)))
+                    if let index = unfilteredStdoutConsole.firstIndex(of: newOutput) {
+                        unfilteredStdoutConsole[index].terminationStatus = task.terminationStatus
+                        if task.terminationReason.rawValue != 0 && stdoutString!.isEmpty && !stderrString.isEmpty {
+                            // Special case: error termination reason and no stdout, so copy the stderr output instead
+                            (unfilteredStdoutConsole[index] as? CLITextOutput)?.text = AttributedString(stderrString)
+                        }
+                        else {
+                            // Process stdout through our ANSI parser.
+                            (unfilteredStdoutConsole[index] as? CLITextOutput)?.text = AttributedString.create(fromANSI: stdoutString!)
+                        }
+                        stdoutConsoleFilterDidChange()
+                        stdoutConsole.append(CLIOutput(prompt: "", command: ""))
+                        stdoutConsole.removeLast()
                     }
                 }
             }
             
             do {
                 try task.run()
+                runningTasks[newOutput.id] = task
             } catch {
                 fatalError("task failed to run")
             }
+        }
+    }
+    
+    func stop(_ id: UUID) {
+        if let task = runningTasks[id] {
+            task.terminate()
         }
     }
     

@@ -27,18 +27,28 @@ struct TerminaderApp: App {
         WindowGroup(for: CLIOutput.self) { output in // MARK: Command/output pop-out window
             if let consoleItem = output.wrappedValue {
                 let terminalFont = Font.system(size: 16).monospaced()
-                let status = consoleItem.terminationStatus
+                let status = consoleItem.terminationStatus ?? 0
+                let dummy = CLIOutput(prompt: "", command: "")
                 ScrollView {
                     Text(consoleItem.date, style: .relative)
                         .monospacedDigit()
                         .frame(maxWidth: .infinity, alignment: .trailing)
                         .foregroundColor(.secondary)
-                    ConsoleItemView(consoleItem: consoleItem, terminalFont: terminalFont)
+                    ConsoleItemView(consoleItem: .bindOptional(output, dummy), terminalFont: terminalFont)
                 }
                 .navigationTitle(status != 0 ? "\(consoleItem.command) — \(status)" : consoleItem.command)
                 .padding()
             }
         }
+    }
+}
+
+extension Binding {
+    static func bindOptional(_ source: Binding<Value?>, _ defaultValue: Value) -> Binding<Value> {
+        self.init(
+            get: { source.wrappedValue ?? defaultValue },
+            set: { source.wrappedValue = $0 }
+        )
     }
 }
 
