@@ -1,0 +1,3 @@
+#!/bin/bash
+
+man -P "ul | cat -s" $@
