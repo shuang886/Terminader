@@ -249,8 +249,11 @@ class ContentViewModel: ObservableObject {
         case "select":
             runAndOutput(select)
         default:
-            if let bundledCommand = Bundle.main.url(forResource: commandParts[0], withExtension: nil, subdirectory: "scripts") {
+            if let bundledCommand = Bundle.main.url(forAuxiliaryExecutable: commandParts[0]) {
                 command = bundledCommand.path + command.dropFirst(commandParts[0].count)
+            }
+            if let script = Bundle.main.url(forResource: commandParts[0], withExtension: nil, subdirectory: "scripts") {
+                command = script.path + command.dropFirst(commandParts[0].count)
             }
             
             // https://stackoverflow.com/questions/55228685/opening-new-pseudo-terminal-device-file-in-macos-with-swift
