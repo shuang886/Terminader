@@ -7,11 +7,11 @@
 
 import SwiftUI
 
-enum ANSIParserState {
-    case initial, escaped, firstParameter, secondParameter, xtermStuff
-}
-
 extension AttributedString {
+    private enum ANSIParserState {
+        case initial, escaped, firstParameter, secondParameter, xtermStuff, vt100Stuff
+    }
+    
     /// Parses a string that optionally contains certain ANSI escape sequences and emits an attributed string that
     /// translates the sequences to text attributes. This implementation is *rudimentary and very incomplete*.
     ///
@@ -69,7 +69,11 @@ extension AttributedString {
                     chars.append(char)
                 }
             case .escaped:
-                state = (char == "[") ? .firstParameter : .initial
+                switch char {
+                case "[": state = .firstParameter
+                case "(": state = .vt100Stuff
+                default:  state = .initial
+                }
             case .firstParameter:
                 if char.isNumber {
                     // keep reading digits of the number into p1
@@ -80,6 +84,10 @@ extension AttributedString {
                 }
                 else if char == "m" || char == ";" {
                     // https://en.wikipedia.org/wiki/ANSI_escape_code#SGR_(Select_Graphic_Rendition)_parameters
+                    if p1 == nil {
+                        // "CSI m is treated as CSI 0 m"
+                        p1 = 0
+                    }
                     switch p1! {
                     case 0:
                         bold = false
@@ -104,6 +112,13 @@ extension AttributedString {
                         break
                     }
                     state = (char == "m") ? .initial : .secondParameter
+                }
+                else if char == "J" {
+                    if let p1, p1 == 2 {
+                        // "clear screen"
+                        output = AttributedString("")
+                    }
+                    state = .initial
                 }
                 else {
                     state = .initial
@@ -130,6 +145,11 @@ extension AttributedString {
             case .xtermStuff:
                 // https://invisible-island.net/xterm/ctlseqs/ctlseqs.html#h3-Functions-using-CSI-_-ordered-by-the-final-character_s_
                 if char == "h" {
+                    state = .initial
+                }
+            case .vt100Stuff:
+                // https://espterm.github.io/docs/VT100%20escape%20codes.html
+                if ["A", "B", "0", "1", "2"].contains(char) {
                     state = .initial
                 }
             }

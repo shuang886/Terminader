@@ -67,7 +67,7 @@ struct ContentView: View {
             ToolbarItem(placement: .navigation) { // MARK: Path components picker
                 Picker("", selection: $model.selectedPathComponent) {
                     ForEach(0..<model.pathComponentsArray.count, id: \.self) { index in
-                        // HACK: the trailing space prevents the picker from truncating the item
+                        // FIXME: the trailing space prevents the picker from truncating the item
                         Text(model.pathComponentsArray[index].name + " ")
                     }
                 }

@@ -37,7 +37,6 @@ struct TerminaderApp: App {
                     ConsoleItemView(consoleItem: .bindOptional(output, dummy), terminalFont: terminalFont)
                 }
                 .navigationTitle(status != 0 ? "\(consoleItem.command) — \(status)" : consoleItem.command)
-                .padding()
             }
         }
     }

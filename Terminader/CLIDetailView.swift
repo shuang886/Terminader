@@ -154,7 +154,7 @@ struct ConsoleView: View {
                         .focused($isFocused)
                         .fixedSize(horizontal: false, vertical: true)
                         .onChange(of: command) { _ in
-                            // HACK: autocorrectionDisabled really should've disabled these replacements
+                            // FIXME: autocorrectionDisabled really should've disabled these replacements
                             command = command.replacingOccurrences(of: "—", with: "--")
                             command = command.replacingOccurrences(of: "”", with: "\"")
                             command = command.replacingOccurrences(of: "“", with: "\"")
