@@ -216,23 +216,36 @@ class ContentViewModel: ObservableObject {
         
         // FIXME: need to handle quotes and backslash escapes
         let commandParts = command.components(separatedBy: .whitespacesAndNewlines)
+        
+        let runAndOutput = { [self] (handler: ([String]) throws -> String?) in
+            do {
+                if let output = try handler(commandParts) {
+                    unfilteredStdoutConsole.append(CLITextOutput(prompt: prompt,
+                                                                 command: command,
+                                                                 terminationStatus: 0,
+                                                                 text: AttributedString(output)))
+                }
+            } catch {
+                unfilteredStdoutConsole.append(CLITextOutput(prompt: prompt,
+                                                             command: command,
+                                                             terminationStatus: 1,
+                                                             text: AttributedString(error.localizedDescription)))
+                unfilteredStderrConsole.append(CLITextOutput(prompt: prompt,
+                                                             command: command,
+                                                             terminationStatus: 1,
+                                                             text: AttributedString(error.localizedDescription)))
+            }
+        }
+        
         switch commandParts[0] {
         case "cd":
             chdir(commandParts)
-        case "select":
-            if let output = select(commandParts) {
-                unfilteredStdoutConsole.append(CLITextOutput(prompt: prompt,
-                                                             command: command,
-                                                             terminationStatus: 0,
-                                                             text: AttributedString(output)))
-            }
         case "deselect":
-            if let output = deselect(commandParts) {
-                unfilteredStdoutConsole.append(CLITextOutput(prompt: prompt,
-                                                             command: command,
-                                                             terminationStatus: 0,
-                                                             text: AttributedString(output)))
-            }
+            runAndOutput(deselect)
+        case "history":
+            runAndOutput(history)
+        case "select":
+            runAndOutput(select)
         default:
             if let bundledCommand = Bundle.main.url(forResource: commandParts[0], withExtension: nil, subdirectory: "scripts") {
                 command = bundledCommand.path + command.dropFirst(commandParts[0].count)
@@ -353,33 +366,39 @@ class ContentViewModel: ObservableObject {
         }
     }
     
-    /// Internal command to select specified files and directories.
-    /// - Parameter commandParts: Array of command-line parameters, including the command itself. The '*' and '?' wildcard characters are honored.
-    private func select(_ commandParts: [String]) -> String? {
-        if commandParts.count == 1 {
-            let unselected = currentDirectoryFiles.filter { !selectedFiles.contains($0) }
-            if unselected.isEmpty {
-                return String(localized: "All items already selected.")
-            }
-            else {
-                return unselected.reduce(String(localized: "Candidates:"), { $0.isEmpty ? $1.name : $0 + "\n" + $1.name })
+    /// Internal command to list command history.
+    /// - Parameter commandParts: Array of command-line parameters, including the command itself.
+    private func history(_ commandParts: [String]) throws -> String? {
+        let count = unfilteredStdoutConsole.count
+        guard count > 0 else {
+            throw "no history"
+        }
+        
+        var startIndex = max(count - 16, 0)
+        var endIndex = count - 1
+        if commandParts.count > 1 {
+            startIndex = max(Int(commandParts[1]) ?? startIndex, 0)
+        }
+        if startIndex >= count {
+            throw "no such event: \(startIndex)"
+        }
+        if commandParts.count > 2 {
+            endIndex = Int(commandParts[2]) ?? endIndex
+            if endIndex < startIndex || endIndex > unfilteredStdoutConsole.count {
+                endIndex = count - 1
             }
         }
-        else {
-            for part in commandParts.dropFirst(1) where !part.isEmpty {
-                for currentDirectoryFile in currentDirectoryFiles {
-                    if currentDirectoryFile.url.lastPathComponent.matchesWildcard(part) {
-                        selectedFiles.insert(currentDirectoryFile)
-                    }
-                }
-            }
+        
+        var output: String = ""
+        for index in startIndex...endIndex {
+            output += "\(String(format: "%5d", index))  \(unfilteredStdoutConsole[index].command)" + ((index < endIndex) ? "\n" : "")
         }
-        return nil
+        return output
     }
     
     /// Internal command to deselect specified files and directories.
     /// - Parameter commandParts: Array of command-line parameters, including the command itself. The '*' and '?' wildcard characters are honored.
-    private func deselect(_ commandParts: [String]) -> String? {
+    private func deselect(_ commandParts: [String]) throws -> String? {
         if commandParts.count == 1 {
             let selected = currentDirectoryFiles.filter { selectedFiles.contains($0) }
             if selected.isEmpty {
@@ -394,6 +413,30 @@ class ContentViewModel: ObservableObject {
                 for currentDirectoryFile in currentDirectoryFiles {
                     if currentDirectoryFile.url.lastPathComponent.matchesWildcard(part) {
                         selectedFiles.remove(currentDirectoryFile)
+                    }
+                }
+            }
+        }
+        return nil
+    }
+    
+    /// Internal command to select specified files and directories.
+    /// - Parameter commandParts: Array of command-line parameters, including the command itself. The '*' and '?' wildcard characters are honored.
+    private func select(_ commandParts: [String]) throws -> String? {
+        if commandParts.count == 1 {
+            let unselected = currentDirectoryFiles.filter { !selectedFiles.contains($0) }
+            if unselected.isEmpty {
+                return String(localized: "All items already selected.")
+            }
+            else {
+                return unselected.reduce(String(localized: "Candidates:"), { $0.isEmpty ? $1.name : $0 + "\n" + $1.name })
+            }
+        }
+        else {
+            for part in commandParts.dropFirst(1) where !part.isEmpty {
+                for currentDirectoryFile in currentDirectoryFiles {
+                    if currentDirectoryFile.url.lastPathComponent.matchesWildcard(part) {
+                        selectedFiles.insert(currentDirectoryFile)
                     }
                 }
             }
@@ -512,4 +555,9 @@ extension String {
         }
         return j == m
     }
+}
+
+extension String: Error {}
+extension String: LocalizedError {
+    public var errorDescription: String? { return self }
 }
