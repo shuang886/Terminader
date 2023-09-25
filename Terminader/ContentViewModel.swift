@@ -67,6 +67,23 @@ class CLITextOutput: CLIOutput {
     }
 }
 
+/// A `CLIOutput` that contains an image.
+class CLIImageOutput: CLIOutput {
+    /// Data containing the image
+    let imageData: Data
+    private enum CodingKeys: String, CodingKey { case imageData }
+    
+    init(prompt: String, command: String, terminationStatus: Int32? = nil, imageData: Data) {
+        self.imageData = imageData
+        super.init(prompt: prompt, command: command, terminationStatus: terminationStatus)
+    }
+    
+    required init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        self.imageData = try container.decode(Data.self, forKey: .imageData)
+        try super.init(from: decoder)
+    }
+}
 
 /// Main model representing the filesystem and browsing context.
 class ContentViewModel: ObservableObject {
@@ -334,7 +351,44 @@ class ContentViewModel: ObservableObject {
                             }
                         }
                         else {
-                            print("received \(stdoutData.count) bytes")
+                            var sol = 0
+                            var status: Int?
+                            var type: String?
+                            while true {
+                                let data = stdoutData.subdata(in: sol ..< stdoutData.endIndex)
+                                if let length = data.firstIndex(where: { $0 == 0x0A }),
+                                   let line = String(data: stdoutData.subdata(in: sol ..< sol+length), encoding: .utf8)?.trimmingCharacters(in: .newlines) {
+                                    if status == nil {
+                                        let parts = line.components(separatedBy: .whitespaces)
+                                        if parts.count >= 2 {
+                                            status = Int(parts[1])
+                                        }
+                                    }
+                                    else {
+                                        let parts = line.components(separatedBy: ":")
+                                        if parts.count >= 2 && parts[0] == "Content-Type" {
+                                            let subparts = parts[1].components(separatedBy: ";")
+                                            if subparts.count >= 1 {
+                                                type = subparts[0].trimmingCharacters(in: .whitespaces)
+                                            }
+                                        }
+                                    }
+                                    sol += length + 1
+                                    if line.isEmpty {
+                                        break
+                                    }
+                                }
+                                else {
+                                    break
+                                }
+                            }
+                            if status == 200, let type {
+                                let body = stdoutData.subdata(in: sol ..< stdoutData.endIndex)
+                                
+                                if type.hasPrefix("image/") {
+                                    unfilteredStdoutConsole[index] = CLIImageOutput(prompt: prompt, command: command, imageData: body)
+                                }
+                            }
                         }
                         stdoutConsoleFilterDidChange()
                         stdoutConsole.append(CLIOutput(prompt: "", command: ""))

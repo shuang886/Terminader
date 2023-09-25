@@ -203,53 +203,53 @@ struct ConsoleItemView: View {
             return .cyan
         }()
         
-        if let textItem = consoleItem as? CLITextOutput {
-            if isGrouped {
-                VStack {
-                    HStack(alignment: .top, spacing: 0) {
-                        Text(textItem.prompt) // MARK: Prompt and command
-                        Text(textItem.command)
-                            .fontWeight(.bold)
-                        
-                        Spacer()
-                        
-                        Text(textItem.date, style: .relative)
-                            .monospacedDigit()
-                            .padding(.leading, 16)
-                        
-                        if let terminationStatus = textItem.terminationStatus {
-                            if terminationStatus != 0 { // MARK: Termination status
-                                Image(systemName: "return.right")
-                                    .padding(.leading, 16)
-                                Text("\(textItem.terminationStatus ?? 0)")
-                            }
+        if isGrouped {
+            VStack {
+                HStack(alignment: .top, spacing: 0) {
+                    Text(consoleItem.prompt) // MARK: Prompt and command
+                    Text(consoleItem.command)
+                        .fontWeight(.bold)
+                    
+                    Spacer()
+                    
+                    Text(consoleItem.date, style: .relative)
+                        .monospacedDigit()
+                        .padding(.leading, 16)
+                    
+                    if let terminationStatus = consoleItem.terminationStatus {
+                        if terminationStatus != 0 { // MARK: Termination status
+                            Image(systemName: "return.right")
+                                .padding(.leading, 16)
+                            Text("\(consoleItem.terminationStatus ?? 0)")
                         }
-                        else {
-                            Button { // MARK: Stop task
-                                model.stop(textItem.id)
-                            } label: {
-                                Image(systemName: "exclamationmark.octagon")
-                                    .foregroundColor(Color(NSColor.textBackgroundColor))
-                            }
-                            .padding(.leading, 16)
-                            .buttonStyle(.plain)
-                       }
-                        
-                        Button { // MARK: Pop-out button
-                            openWindow(value: consoleItem)
+                    }
+                    else {
+                        Button { // MARK: Stop task
+                            model.stop(consoleItem.id)
                         } label: {
-                            Image(systemName: "rectangle.portrait.and.arrow.forward")
+                            Image(systemName: "exclamationmark.octagon")
                                 .foregroundColor(Color(NSColor.textBackgroundColor))
                         }
                         .padding(.leading, 16)
                         .buttonStyle(.plain)
-                    }
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding(.top, 2)
-                    .padding(.horizontal, 4)
-                    .foregroundColor(Color(NSColor.textBackgroundColor))
-                    .background(Rectangle().fill(color))
+                   }
                     
+                    Button { // MARK: Pop-out button
+                        openWindow(value: consoleItem)
+                    } label: {
+                        Image(systemName: "rectangle.portrait.and.arrow.forward")
+                            .foregroundColor(Color(NSColor.textBackgroundColor))
+                    }
+                    .padding(.leading, 16)
+                    .buttonStyle(.plain)
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(.top, 2)
+                .padding(.horizontal, 4)
+                .foregroundColor(Color(NSColor.textBackgroundColor))
+                .background(Rectangle().fill(color))
+                
+                if let textItem = consoleItem as? CLITextOutput {
                     Text(textItem.text) // MARK: Command output
                         .lineLimit(nil)
                         .frame(maxWidth: .infinity, alignment: .leading)
@@ -258,11 +258,22 @@ struct ConsoleItemView: View {
                         .padding(.horizontal, 4)
                         .padding(.bottom, 2)
                 }
-                .background(RoundedRectangle(cornerRadius: 8).stroke(color))
-                .clipShape(RoundedRectangle(cornerRadius: 8))
-                .padding(.vertical, 1)
+                else if let imageItem = consoleItem as? CLIImageOutput {
+                    if let image = NSImage(data: imageItem.imageData) {
+                        Image(nsImage: image)
+                    }
+                    else {
+                        Image(systemName: "photo")
+                            .imageScale(.large)
+                    }
+                }
             }
-            else {
+            .background(RoundedRectangle(cornerRadius: 8).stroke(color))
+            .clipShape(RoundedRectangle(cornerRadius: 8))
+            .padding(.vertical, 1)
+        }
+        else {
+            if let textItem = consoleItem as? CLITextOutput {
                 Text(textItem.text) // MARK: Command output for pop-out window
                     .lineLimit(nil)
                     .frame(maxWidth: .infinity, alignment: .leading)
