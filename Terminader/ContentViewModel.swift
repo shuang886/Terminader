@@ -211,7 +211,7 @@ class ContentViewModel: ObservableObject {
         selectedFiles.remove(file)
     }
     
-    private var stdoutString: String?
+    private var stdoutData = Data()
     private var runningTasks: [ UUID : Process ] = [:]
     
     /// Execute a command.
@@ -284,26 +284,24 @@ class ContentViewModel: ObservableObject {
             ]
             task.currentDirectoryURL = currentDirectory.url
             
-            stdoutString = ""
+            stdoutData = Data()
             let newOutput = CLITextOutput(prompt: prompt, command: originalCommand, text: AttributedString())
             unfilteredStdoutConsole.append(newOutput)
             
             masterFile.readabilityHandler = { [self] _ in
                 // Accumulate everything in stdoutString for now, because the CLI wants to know
                 // the termination reason to draw the colored borders correctly.
-                let stdoutData = masterFile.availableData
-                if let newArrival = String(data: stdoutData, encoding: .utf8) {
-                    stdoutString! += newArrival
-                    
-                    DispatchQueue.main.async { [self] in
-                        if let index = unfilteredStdoutConsole.firstIndex(of: newOutput) {
-                            let output = stdoutString!.trimmingCharacters(in: .newlines)
-                            (unfilteredStdoutConsole[index] as? CLITextOutput)?.text = AttributedString.create(fromANSI: output)
-                            stdoutConsoleFilterDidChange()
-                            
-                            stdoutConsole.append(CLIOutput(prompt: "", command: ""))
-                            stdoutConsole.removeLast()
-                        }
+                let newData = masterFile.availableData
+                stdoutData += newData
+                
+                DispatchQueue.main.async { [self] in
+                    if let index = unfilteredStdoutConsole.firstIndex(of: newOutput),
+                       let stdoutString = String(data: stdoutData, encoding: .utf8)?.trimmingCharacters(in: .newlines) {
+                        (unfilteredStdoutConsole[index] as? CLITextOutput)?.text = AttributedString.create(fromANSI: stdoutString)
+                        stdoutConsoleFilterDidChange()
+                        
+                        stdoutConsole.append(CLIOutput(prompt: "", command: ""))
+                        stdoutConsole.removeLast()
                     }
                 }
             }
@@ -323,16 +321,20 @@ class ContentViewModel: ObservableObject {
                                                                      text: AttributedString(stderrString)))
                     }
                     
-                    stdoutString = stdoutString?.trimmingCharacters(in: .newlines)
                     if let index = unfilteredStdoutConsole.firstIndex(of: newOutput) {
                         unfilteredStdoutConsole[index].terminationStatus = task.terminationStatus
-                        if task.terminationReason.rawValue != 0 && stdoutString!.isEmpty && !stderrString.isEmpty {
-                            // Special case: error termination reason and no stdout, so copy the stderr output instead
-                            (unfilteredStdoutConsole[index] as? CLITextOutput)?.text = AttributedString(stderrString)
+                        if let stdoutString = String(data: stdoutData, encoding: .utf8)?.trimmingCharacters(in: .newlines) {
+                            if task.terminationReason.rawValue != 0 && stdoutString.isEmpty && !stderrString.isEmpty {
+                                // Special case: error termination reason and no stdout, so copy the stderr output instead
+                                (unfilteredStdoutConsole[index] as? CLITextOutput)?.text = AttributedString(stderrString)
+                            }
+                            else {
+                                // Process stdout through our ANSI parser.
+                                (unfilteredStdoutConsole[index] as? CLITextOutput)?.text = AttributedString.create(fromANSI: stdoutString)
+                            }
                         }
                         else {
-                            // Process stdout through our ANSI parser.
-                            (unfilteredStdoutConsole[index] as? CLITextOutput)?.text = AttributedString.create(fromANSI: stdoutString!)
+                            print("received \(stdoutData.count) bytes")
                         }
                         stdoutConsoleFilterDidChange()
                         stdoutConsole.append(CLIOutput(prompt: "", command: ""))
