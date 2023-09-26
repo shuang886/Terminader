@@ -27,14 +27,25 @@ if CommandLine.argc >= 2 {
     let fileName = CommandLine.arguments[1]
     do {
         let fileURL = URL(filePath: fileName)
+        var useBase64 = false
         
         let data = try Data(contentsOf: URL(filePath: fileName))
-        print("HTTP/1.1 200 OK")
+        print("MIME-Version: 1.0")
         let type = detectFileType(url: fileURL)
         print("Content-Type: \(type)")
+        if type.hasPrefix("image/") {
+            useBase64 = true
+            print("Content-Transfer-Encoding: base64")
+        }
         print("Content-Length: \(data.count)")
         print("")
-        FileHandle.standardOutput.write(data)
+        
+        if useBase64 {
+            print(data.base64EncodedString())
+        }
+        else {
+            FileHandle.standardOutput.write(data)
+        }
         exit(0)
     } catch {
         fputs(error.localizedDescription, stderr)

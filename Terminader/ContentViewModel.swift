@@ -70,10 +70,10 @@ class CLITextOutput: CLIOutput {
 /// A `CLIOutput` that contains an image.
 class CLIImageOutput: CLIOutput {
     /// Data containing the image
-    let imageData: Data
+    let imageData: Data?
     private enum CodingKeys: String, CodingKey { case imageData }
     
-    init(prompt: String, command: String, terminationStatus: Int32? = nil, imageData: Data) {
+    init(prompt: String, command: String, terminationStatus: Int32? = nil, imageData: Data?) {
         self.imageData = imageData
         super.init(prompt: prompt, command: command, terminationStatus: terminationStatus)
     }
@@ -313,12 +313,14 @@ class ContentViewModel: ObservableObject {
                 
                 DispatchQueue.main.async { [self] in
                     if let index = unfilteredStdoutConsole.firstIndex(of: newOutput),
-                       let stdoutString = String(data: stdoutData, encoding: .utf8)?.trimmingCharacters(in: .newlines) {
-                        (unfilteredStdoutConsole[index] as? CLITextOutput)?.text = AttributedString.create(fromANSI: stdoutString)
-                        stdoutConsoleFilterDidChange()
-                        
-                        stdoutConsole.append(CLIOutput(prompt: "", command: ""))
-                        stdoutConsole.removeLast()
+                       let stdoutString = String(data: stdoutData, encoding: .utf8) {
+                        if !stdoutString.hasPrefix("MIME-Version:") {
+                            (unfilteredStdoutConsole[index] as? CLITextOutput)?.text = AttributedString.create(fromANSI: stdoutString.trimmingCharacters(in: .whitespacesAndNewlines))
+                            stdoutConsoleFilterDidChange()
+                            
+                            stdoutConsole.append(CLIOutput(prompt: "", command: ""))
+                            stdoutConsole.removeLast()
+                        }
                     }
                 }
             }
@@ -340,7 +342,57 @@ class ContentViewModel: ObservableObject {
                     
                     if let index = unfilteredStdoutConsole.firstIndex(of: newOutput) {
                         unfilteredStdoutConsole[index].terminationStatus = task.terminationStatus
-                        if let stdoutString = String(data: stdoutData, encoding: .utf8)?.trimmingCharacters(in: .newlines) {
+                        
+                        var sol = 0
+                        var isMIME = false
+                        var isBase64 = false
+                        var type: String?
+                        while true {
+                            let data = stdoutData.subdata(in: sol..<stdoutData.endIndex)
+                            if let length = data.firstIndex(where: { $0 == 0x0A }),
+                               let line = String(data: stdoutData.subdata(in: sol..<sol+length), encoding: .utf8)?.trimmingCharacters(in: .newlines) {
+                                let parts = line.components(separatedBy: ":")
+                                if parts.count >= 2 {
+                                    switch parts[0] {
+                                    case "MIME-Version":
+                                        isMIME = true
+                                    case "Content-Type":
+                                        let subparts = parts[1].components(separatedBy: ";")
+                                        if subparts.count >= 1 {
+                                            type = subparts[0].trimmingCharacters(in: .whitespaces)
+                                        }
+                                    case "Content-Transfer-Encoding":
+                                        isBase64 = (parts[1].trimmingCharacters(in: .whitespaces).caseInsensitiveCompare("base64") == .orderedSame)
+                                    default:
+                                        break
+                                    }
+                                }
+                                sol += length + 1
+                                if line.isEmpty {
+                                    break
+                                }
+                            }
+                            else {
+                                break
+                            }
+                        }
+                        if isMIME, let type {
+                            if type.hasPrefix("image/") {
+                                let body = {
+                                    let rawData = stdoutData.subdata(in: sol..<stdoutData.endIndex)
+                                    if isBase64,
+                                       let rawString = String(data: rawData, encoding: .utf8)?.trimmingCharacters(in: .whitespacesAndNewlines),
+                                       let decoded = Data(base64Encoded: rawString) {
+                                        return decoded
+                                    }
+                                    else {
+                                        return rawData
+                                    }
+                                }()
+                                unfilteredStdoutConsole[index] = CLIImageOutput(prompt: prompt, command: command, imageData: body)
+                            }
+                        }
+                        else if let stdoutString = String(data: stdoutData, encoding: .utf8)?.trimmingCharacters(in: .newlines) {
                             if task.terminationReason.rawValue != 0 && stdoutString.isEmpty && !stderrString.isEmpty {
                                 // Special case: error termination reason and no stdout, so copy the stderr output instead
                                 (unfilteredStdoutConsole[index] as? CLITextOutput)?.text = AttributedString(stderrString)
@@ -348,46 +400,6 @@ class ContentViewModel: ObservableObject {
                             else {
                                 // Process stdout through our ANSI parser.
                                 (unfilteredStdoutConsole[index] as? CLITextOutput)?.text = AttributedString.create(fromANSI: stdoutString)
-                            }
-                        }
-                        else {
-                            var sol = 0
-                            var status: Int?
-                            var type: String?
-                            while true {
-                                let data = stdoutData.subdata(in: sol ..< stdoutData.endIndex)
-                                if let length = data.firstIndex(where: { $0 == 0x0A }),
-                                   let line = String(data: stdoutData.subdata(in: sol ..< sol+length), encoding: .utf8)?.trimmingCharacters(in: .newlines) {
-                                    if status == nil {
-                                        let parts = line.components(separatedBy: .whitespaces)
-                                        if parts.count >= 2 {
-                                            status = Int(parts[1])
-                                        }
-                                    }
-                                    else {
-                                        let parts = line.components(separatedBy: ":")
-                                        if parts.count >= 2 && parts[0] == "Content-Type" {
-                                            let subparts = parts[1].components(separatedBy: ";")
-                                            if subparts.count >= 1 {
-                                                type = subparts[0].trimmingCharacters(in: .whitespaces)
-                                            }
-                                        }
-                                    }
-                                    sol += length + 1
-                                    if line.isEmpty {
-                                        break
-                                    }
-                                }
-                                else {
-                                    break
-                                }
-                            }
-                            if status == 200, let type {
-                                let body = stdoutData.subdata(in: sol ..< stdoutData.endIndex)
-                                
-                                if type.hasPrefix("image/") {
-                                    unfilteredStdoutConsole[index] = CLIImageOutput(prompt: prompt, command: command, imageData: body)
-                                }
                             }
                         }
                         stdoutConsoleFilterDidChange()
@@ -595,6 +607,7 @@ class ContentViewModel: ObservableObject {
                         currentDirectoryDidChange()
                     }
                 })
+            watchingDirectory = true
         } catch {
             fatalError("unable to watch current directory")
         }

@@ -259,8 +259,11 @@ struct ConsoleItemView: View {
                         .padding(.bottom, 2)
                 }
                 else if let imageItem = consoleItem as? CLIImageOutput {
-                    if let image = NSImage(data: imageItem.imageData) {
+                    if let imageData = imageItem.imageData,
+                       let image = NSImage(data: imageData) {
                         Image(nsImage: image)
+                            .scaledToFit()
+                            .frame(maxWidth: 1024, maxHeight: 1024)
                     }
                     else {
                         Image(systemName: "photo")
@@ -281,6 +284,16 @@ struct ConsoleItemView: View {
                     .textSelection(.enabled)
                     .padding(.horizontal, 4)
                     .padding(.bottom, 2)
+            }
+            else if let imageItem = consoleItem as? CLIImageOutput {
+                if let imageData = imageItem.imageData,
+                   let image = NSImage(data: imageData) {
+                    Image(nsImage: image)
+                }
+                else {
+                    Image(systemName: "photo")
+                        .imageScale(.large)
+                }
             }
         }
     }
