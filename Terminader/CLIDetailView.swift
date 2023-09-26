@@ -204,7 +204,7 @@ struct ConsoleItemView: View {
         }()
         
         if isGrouped {
-            VStack {
+            VStack(spacing: 0) {
                 HStack(alignment: .top, spacing: 0) {
                     Text(consoleItem.prompt) // MARK: Prompt and command
                     Text(consoleItem.command)

@@ -317,7 +317,8 @@ class ContentViewModel: ObservableObject {
                         if !stdoutString.hasPrefix("MIME-Version:") {
                             (unfilteredStdoutConsole[index] as? CLITextOutput)?.text = AttributedString.create(fromANSI: stdoutString.trimmingCharacters(in: .whitespacesAndNewlines))
                             stdoutConsoleFilterDidChange()
-                            
+
+                            // FIXME: tickle the UI so it'd update
                             stdoutConsole.append(CLIOutput(prompt: "", command: ""))
                             stdoutConsole.removeLast()
                         }
@@ -341,8 +342,6 @@ class ContentViewModel: ObservableObject {
                     }
                     
                     if let index = unfilteredStdoutConsole.firstIndex(of: newOutput) {
-                        unfilteredStdoutConsole[index].terminationStatus = task.terminationStatus
-                        
                         var sol = 0
                         var isMIME = false
                         var isBase64 = false
@@ -402,7 +401,10 @@ class ContentViewModel: ObservableObject {
                                 (unfilteredStdoutConsole[index] as? CLITextOutput)?.text = AttributedString.create(fromANSI: stdoutString)
                             }
                         }
+                        unfilteredStdoutConsole[index].terminationStatus = task.terminationStatus
                         stdoutConsoleFilterDidChange()
+                        
+                        // FIXME: tickle the UI so it'd update
                         stdoutConsole.append(CLIOutput(prompt: "", command: ""))
                         stdoutConsole.removeLast()
                     }
