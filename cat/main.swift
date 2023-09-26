@@ -31,7 +31,10 @@ if CommandLine.argc >= 2 {
         
         let data = try Data(contentsOf: URL(filePath: fileName))
         print("MIME-Version: 1.0")
-        let type = detectFileType(url: fileURL)
+        var type = detectFileType(url: fileURL)
+        if type.hasPrefix("text/plain;") && fileURL.pathExtension == "md" {
+            type = type.replacingOccurrences(of: "text/plain;", with: "text/markdown;")
+        }
         print("Content-Type: \(type)")
         if type.hasPrefix("image/") {
             useBase64 = true

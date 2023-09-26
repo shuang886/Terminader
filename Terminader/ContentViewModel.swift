@@ -49,8 +49,33 @@ class CLIOutput: Identifiable, Equatable, Hashable, Codable {
     }
 }
 
-/// A `CLIOutput` that contains only text, used by legacy applications.
+/// A `CLIOutput` that contains only text, used to represent Markdown content or another plain text data format.
 class CLITextOutput: CLIOutput {
+    enum Format: Int, Decodable {
+        case plain, markdown
+    }
+    
+    /// String containing the output from the application, after certain ANSI escape sequences were parsed.
+    var text: String
+    var format: Format
+    private enum CodingKeys: String, CodingKey { case text, format }
+    
+    init(prompt: String, command: String, terminationStatus: Int32? = nil, text: String, format: Format = .plain) {
+        self.text = text
+        self.format = format
+        super.init(prompt: prompt, command: command, terminationStatus: terminationStatus)
+    }
+    
+    required init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        self.text = try container.decode(String.self, forKey: .text)
+        self.format = try container.decode(Format.self, forKey: .format)
+        try super.init(from: decoder)
+    }
+}
+
+/// A `CLIOutput` that contains text that optionally renders ANSI escape sequences, used by legacy applications.
+class CLIAttributedTextOutput: CLIOutput {
     /// String containing the output from the application, after certain ANSI escape sequences were parsed.
     var text: AttributedString
     private enum CodingKeys: String, CodingKey { case text }
@@ -244,17 +269,17 @@ class ContentViewModel: ObservableObject {
         let runAndOutput = { [self] (handler: ([String]) throws -> String?) in
             do {
                 if let output = try handler(commandParts) {
-                    unfilteredStdoutConsole.append(CLITextOutput(prompt: prompt,
+                    unfilteredStdoutConsole.append(CLIAttributedTextOutput(prompt: prompt,
                                                                  command: command,
                                                                  terminationStatus: 0,
                                                                  text: AttributedString(output)))
                 }
             } catch {
-                unfilteredStdoutConsole.append(CLITextOutput(prompt: prompt,
+                unfilteredStdoutConsole.append(CLIAttributedTextOutput(prompt: prompt,
                                                              command: command,
                                                              terminationStatus: 1,
                                                              text: AttributedString(error.localizedDescription)))
-                unfilteredStderrConsole.append(CLITextOutput(prompt: prompt,
+                unfilteredStderrConsole.append(CLIAttributedTextOutput(prompt: prompt,
                                                              command: command,
                                                              terminationStatus: 1,
                                                              text: AttributedString(error.localizedDescription)))
@@ -302,7 +327,7 @@ class ContentViewModel: ObservableObject {
             task.currentDirectoryURL = currentDirectory.url
             
             stdoutData = Data()
-            let newOutput = CLITextOutput(prompt: prompt, command: originalCommand, text: AttributedString())
+            let newOutput = CLIAttributedTextOutput(prompt: prompt, command: originalCommand, text: AttributedString())
             unfilteredStdoutConsole.append(newOutput)
             
             masterFile.readabilityHandler = { [self] _ in
@@ -315,7 +340,7 @@ class ContentViewModel: ObservableObject {
                     if let index = unfilteredStdoutConsole.firstIndex(of: newOutput),
                        let stdoutString = String(data: stdoutData, encoding: .utf8) {
                         if !stdoutString.hasPrefix("MIME-Version:") {
-                            (unfilteredStdoutConsole[index] as? CLITextOutput)?.text = AttributedString.create(fromANSI: stdoutString.trimmingCharacters(in: .whitespacesAndNewlines))
+                            (unfilteredStdoutConsole[index] as? CLIAttributedTextOutput)?.text = AttributedString.create(fromANSI: stdoutString.trimmingCharacters(in: .whitespacesAndNewlines))
                             stdoutConsoleFilterDidChange()
 
                             // FIXME: tickle the UI so it'd update
@@ -335,7 +360,7 @@ class ContentViewModel: ObservableObject {
                     let stderrData = stderrPipe.fileHandleForReading.readDataToEndOfFile()
                     let stderrString = String(data: stderrData, encoding: .utf8)!.trimmingCharacters(in: .newlines)
                     if !stderrString.isEmpty {
-                        unfilteredStderrConsole.append(CLITextOutput(prompt: prompt,
+                        unfilteredStderrConsole.append(CLIAttributedTextOutput(prompt: prompt,
                                                                      command: originalCommand,
                                                                      terminationStatus: task.terminationStatus,
                                                                      text: AttributedString(stderrString)))
@@ -390,15 +415,26 @@ class ContentViewModel: ObservableObject {
                                 }()
                                 unfilteredStdoutConsole[index] = CLIImageOutput(prompt: prompt, command: command, imageData: body)
                             }
+                            else if type.hasPrefix("text/"),
+                                    let stdoutString = String(data: stdoutData.subdata(in: sol..<stdoutData.endIndex), encoding: .utf8) {
+                                switch type {
+                                case "text/markdown":
+                                    unfilteredStdoutConsole[index] = CLITextOutput(prompt: prompt, command: command, text: stdoutString, format: .markdown)
+                                case "text/plain":
+                                    unfilteredStdoutConsole[index] = CLITextOutput(prompt: prompt, command: command, text: stdoutString)
+                                default:
+                                    break
+                                }
+                            }
                         }
                         else if let stdoutString = String(data: stdoutData, encoding: .utf8)?.trimmingCharacters(in: .newlines) {
                             if task.terminationReason.rawValue != 0 && stdoutString.isEmpty && !stderrString.isEmpty {
                                 // Special case: error termination reason and no stdout, so copy the stderr output instead
-                                (unfilteredStdoutConsole[index] as? CLITextOutput)?.text = AttributedString(stderrString)
+                                (unfilteredStdoutConsole[index] as? CLIAttributedTextOutput)?.text = AttributedString(stderrString)
                             }
                             else {
                                 // Process stdout through our ANSI parser.
-                                (unfilteredStdoutConsole[index] as? CLITextOutput)?.text = AttributedString.create(fromANSI: stdoutString)
+                                (unfilteredStdoutConsole[index] as? CLIAttributedTextOutput)?.text = AttributedString.create(fromANSI: stdoutString)
                             }
                         }
                         unfilteredStdoutConsole[index].terminationStatus = task.terminationStatus
@@ -435,7 +471,7 @@ class ContentViewModel: ObservableObject {
             if output.command.localizedCaseInsensitiveContains(consoleFilter) {
                 return true
             }
-            if let textOutput = output as? CLITextOutput,
+            if let textOutput = output as? CLIAttributedTextOutput,
                String(textOutput.text.characters).localizedCaseInsensitiveContains(consoleFilter) {
                 return true
             }
@@ -452,7 +488,7 @@ class ContentViewModel: ObservableObject {
             if output.command.localizedCaseInsensitiveContains(consoleFilter) {
                 return true
             }
-            if let textOutput = output as? CLITextOutput,
+            if let textOutput = output as? CLIAttributedTextOutput,
                String(textOutput.text.characters).localizedCaseInsensitiveContains(consoleFilter) {
                 return true
             }

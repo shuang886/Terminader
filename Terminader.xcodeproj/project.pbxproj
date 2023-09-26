@@ -18,6 +18,7 @@
 		B06CAEBB2ABA170600405BAC /* Preview Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = B06CAEBA2ABA170600405BAC /* Preview Assets.xcassets */; };
 		B06CAEC42ABA1FF200405BAC /* WrappingHStack in Frameworks */ = {isa = PBXBuildFile; productRef = B06CAEC32ABA1FF200405BAC /* WrappingHStack */; };
 		B06CAEC82ABA251800405BAC /* ContentViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = B06CAEC72ABA251800405BAC /* ContentViewModel.swift */; };
+		B07523772AC3435E00F4307E /* MarkdownUI in Frameworks */ = {isa = PBXBuildFile; productRef = B07523762AC3435E00F4307E /* MarkdownUI */; };
 		B090726F2ABE1CB900D59DA1 /* main.swift in Sources */ = {isa = PBXBuildFile; fileRef = B090726E2ABE1CB900D59DA1 /* main.swift */; };
 		B09072762ABE1E3100D59DA1 /* cat in Embed Commands */ = {isa = PBXBuildFile; fileRef = B090726C2ABE1CB900D59DA1 /* cat */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
 		B09072792ABE3BC200D59DA1 /* EonilFSEvents in Frameworks */ = {isa = PBXBuildFile; productRef = B09072782ABE3BC200D59DA1 /* EonilFSEvents */; };
@@ -79,6 +80,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				B07523772AC3435E00F4307E /* MarkdownUI in Frameworks */,
 				B09072792ABE3BC200D59DA1 /* EonilFSEvents in Frameworks */,
 				B06CAEC42ABA1FF200405BAC /* WrappingHStack in Frameworks */,
 			);
@@ -170,6 +172,7 @@
 			packageProductDependencies = (
 				B06CAEC32ABA1FF200405BAC /* WrappingHStack */,
 				B09072782ABE3BC200D59DA1 /* EonilFSEvents */,
+				B07523762AC3435E00F4307E /* MarkdownUI */,
 			);
 			productName = Terminader;
 			productReference = B06CAEB02ABA170500405BAC /* Terminader.app */;
@@ -222,6 +225,7 @@
 			packageReferences = (
 				B06CAEC22ABA1FF200405BAC /* XCRemoteSwiftPackageReference "WrappingHStack" */,
 				B09072772ABE3BC200D59DA1 /* XCRemoteSwiftPackageReference "FSEvents" */,
+				B07523752AC3435E00F4307E /* XCRemoteSwiftPackageReference "swift-markdown-ui" */,
 			);
 			productRefGroup = B06CAEB12ABA170500405BAC /* Products */;
 			projectDirPath = "";
@@ -522,6 +526,14 @@
 				minimumVersion = 0.1.3;
 			};
 		};
+		B07523752AC3435E00F4307E /* XCRemoteSwiftPackageReference "swift-markdown-ui" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/gonzalezreal/swift-markdown-ui.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 2.0.0;
+			};
+		};
 		B09072772ABE3BC200D59DA1 /* XCRemoteSwiftPackageReference "FSEvents" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/eonil/FSEvents.git";
@@ -542,6 +554,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = B06CAEC22ABA1FF200405BAC /* XCRemoteSwiftPackageReference "WrappingHStack" */;
 			productName = WrappingHStack;
+		};
+		B07523762AC3435E00F4307E /* MarkdownUI */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = B07523752AC3435E00F4307E /* XCRemoteSwiftPackageReference "swift-markdown-ui" */;
+			productName = MarkdownUI;
 		};
 		B09072782ABE3BC200D59DA1 /* EonilFSEvents */ = {
 			isa = XCSwiftPackageProductDependency;

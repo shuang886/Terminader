@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import MarkdownUI
 
 enum CLIPane: CaseIterable, Identifiable {
     case console, errors
@@ -249,7 +250,7 @@ struct ConsoleItemView: View {
                 .foregroundColor(Color(NSColor.textBackgroundColor))
                 .background(Rectangle().fill(color))
                 
-                if let textItem = consoleItem as? CLITextOutput {
+                if let textItem = consoleItem as? CLIAttributedTextOutput {
                     Text(textItem.text) // MARK: Command output
                         .lineLimit(nil)
                         .frame(maxWidth: .infinity, alignment: .leading)
@@ -270,13 +271,20 @@ struct ConsoleItemView: View {
                             .imageScale(.large)
                     }
                 }
+                else if let textItem = consoleItem as? CLITextOutput {
+                    Markdown(textItem.text)
+                        .environment(\.openURL, OpenURLAction { url in
+                            print(url)
+                            return .handled
+                        })
+                }
             }
             .background(RoundedRectangle(cornerRadius: 8).stroke(color))
             .clipShape(RoundedRectangle(cornerRadius: 8))
             .padding(.vertical, 1)
         }
         else {
-            if let textItem = consoleItem as? CLITextOutput {
+            if let textItem = consoleItem as? CLIAttributedTextOutput {
                 Text(textItem.text) // MARK: Command output for pop-out window
                     .lineLimit(nil)
                     .frame(maxWidth: .infinity, alignment: .leading)
@@ -294,6 +302,13 @@ struct ConsoleItemView: View {
                     Image(systemName: "photo")
                         .imageScale(.large)
                 }
+            }
+            else if let textItem = consoleItem as? CLITextOutput {
+                Markdown(textItem.text)
+                    .environment(\.openURL, OpenURLAction { url in
+                        print(url)
+                        return .handled
+                    })
             }
         }
     }
