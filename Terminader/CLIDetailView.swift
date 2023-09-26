@@ -5,6 +5,7 @@
 //  Created by Steven Huang on 9/20/23.
 //
 
+import AppKit
 import SwiftUI
 import MarkdownUI
 
@@ -190,6 +191,8 @@ struct ConsoleItemView: View {
     @Binding var consoleItem: CLIOutput
     /// Font to use.
     var terminalFont: Font
+    @State private var isShowingMarkdownPopup = false
+    @State private var markdownPopupURL: URL?
     
     @Environment(\.openWindow) private var openWindow
     
@@ -274,9 +277,27 @@ struct ConsoleItemView: View {
                 else if let textItem = consoleItem as? CLITextOutput {
                     Markdown(textItem.text)
                         .environment(\.openURL, OpenURLAction { url in
-                            print(url)
-                            return .handled
+                            if url.isFileURL {
+                                markdownPopupURL = url
+                                isShowingMarkdownPopup = true
+                                return .handled
+                            }
+                            return .systemAction
                         })
+                        .popover(isPresented: $isShowingMarkdownPopup, attachmentAnchor: .point(.center)) {
+                            if let markdownPopupURL {
+                                List {
+                                    Button("Open") {
+                                        NSWorkspace.shared.open(markdownPopupURL)
+                                    }
+                                    Button("Get Info") {
+                                        openWindow(value: File(url: markdownPopupURL))
+                                    }
+                                }
+                                .buttonStyle(.plain)
+                            }
+                        }
+                        .markdownTheme(.terminador)
                 }
             }
             .background(RoundedRectangle(cornerRadius: 8).stroke(color))
@@ -320,4 +341,11 @@ struct CLIDetailView_Previews: PreviewProvider {
         CLIDetailView()
             .environmentObject(ContentViewModel())
     }
+}
+
+extension Theme {
+    static let terminador = Theme()
+        .link {
+            UnderlineStyle(.single)
+        }
 }
