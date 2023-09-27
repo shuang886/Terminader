@@ -147,25 +147,12 @@ struct ConsoleView: View {
                         .font(terminalFont)
                         .foregroundColor(.green)
                     
-                    TextEditor(text: $command)
-                        .autocorrectionDisabled()
-                        .scrollContentBackground(.hidden)
-                        .scrollIndicators(.never)
-                        .font(terminalFont)
-                        .focused($isFocused)
-                        .fixedSize(horizontal: false, vertical: true)
-                        .onChange(of: command) { _ in
-                            // FIXME: autocorrectionDisabled really should've disabled these replacements
-                            command = command.replacingOccurrences(of: "—", with: "--")
-                            command = command.replacingOccurrences(of: "”", with: "\"")
-                            command = command.replacingOccurrences(of: "“", with: "\"")
-                            
-                            if command.last?.isNewline ?? false {
-                                model.run(prompt: "\(model.currentDirectory.name) % ", command: command)
-                                command = ""
-                            }
-                        }
-                        .padding(0)
+                    CommandPrompt(text: $command, onCommit: {
+                        model.run(prompt: "\(model.currentDirectory.name) % ", command: command)
+                    })
+                    .focused($isFocused)
+                    .focusEffectDisabled()
+                    .font(terminalFont)
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
             }
@@ -330,6 +317,89 @@ struct ConsoleItemView: View {
                         return .handled
                     })
             }
+        }
+    }
+}
+
+struct CommandPrompt: View {
+    @Binding var text: String
+    @State private var presentation = AttributedString()
+    @State private var cursor: String.Index {
+        didSet {
+            updatePresentation()
+        }
+    }
+    var onCommit: (() -> Void)?
+    
+    init(text: Binding<String>, onCommit: (() -> Void)? = nil) {
+        self._text = text
+        self._cursor = State(initialValue: text.wrappedValue.startIndex)
+        self.onCommit = onCommit
+    }
+    
+    var body: some View {
+        Text(presentation)
+            .focusEffectDisabled()
+            .focusable()
+            .onKeyPress { keyPress in
+                // FIXME: for some reason, changing 'text' in the callback doesn't take effect immediately
+                DispatchQueue.main.async {
+                    switch keyPress.key {
+                    case .clear:
+                        break
+                    case .delete, KeyEquivalent("\u{7F}"): // FIXME: why doesn't .delete work?
+                        if cursor > text.startIndex {
+                            let previous = text.index(before: cursor)
+                            text.remove(at: previous)
+                            cursor = previous
+                        }
+                    case .deleteForward:
+                        if cursor < text.endIndex {
+                            text.remove(at: cursor)
+                            updatePresentation()
+                        }
+                    case .downArrow:
+                        break
+                    case .end, .escape, .home:
+                        break
+                    case .leftArrow:
+                        if cursor > text.startIndex {
+                            cursor = text.index(before: cursor)
+                        }
+                    case .pageDown, .pageUp:
+                        break
+                    case .return:
+                        self.onCommit?()
+                        text = ""
+                        cursor = text.startIndex
+                    case .rightArrow:
+                        if cursor < text.endIndex {
+                            cursor = text.index(after: cursor)
+                        }
+                    case .tab, .upArrow:
+                        break
+                    default:
+                        text.insert(contentsOf: keyPress.characters, at: cursor)
+                        cursor = text.index(after: cursor)
+                    }
+                }
+                return .handled
+            }
+            .onAppear {
+                updatePresentation()
+            }
+    }
+    
+    private func updatePresentation() {
+        presentation = AttributedString(text.prefix(upTo: cursor))
+        
+        var cursorCharacter = AttributedString((cursor < text.endIndex) ? String(text[cursor]) : " ")
+        cursorCharacter.foregroundColor = Color(NSColor.textBackgroundColor)
+        cursorCharacter.backgroundColor = .yellow
+        presentation += cursorCharacter
+        
+        if cursor < text.endIndex {
+            presentation += AttributedString(text.suffix(from: text.index(after: cursor)))
         }
     }
 }
