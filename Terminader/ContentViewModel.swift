@@ -509,7 +509,7 @@ class ContentViewModel: ObservableObject {
                 return FileManager.default.homeDirectoryForCurrentUser
             }
             else {
-                let destination = currentDirectory.url.appending(component: commandParts[1])
+                let destination = currentDirectory.url.appending(component: commandParts[1]).standardized
                 var isDirectory: ObjCBool = false
                 if FileManager.default.fileExists(atPath: destination.path, isDirectory: &isDirectory) && isDirectory.boolValue {
                     return destination
