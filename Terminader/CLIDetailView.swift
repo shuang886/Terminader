@@ -147,12 +147,36 @@ struct ConsoleView: View {
                         .font(terminalFont)
                         .foregroundColor(.green)
                     
+                    // Enable SUPPORT_IME if you need input methods (e.g., for CJK languages), but that'll
+                    // cost you custom keyboard support.
+                    #if !SUPPORT_IME
                     CommandPrompt(text: $command, onCommit: {
                         model.run(prompt: "\(model.currentDirectory.name) % ", command: command)
                     })
                     .focused($isFocused)
                     .focusEffectDisabled()
                     .font(terminalFont)
+                    #else
+                    TextEditor(text: $command)
+                        .autocorrectionDisabled()
+                        .scrollContentBackground(.hidden)
+                        .scrollIndicators(.never)
+                        .font(terminalFont)
+                        .focused($isFocused)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .onChange(of: command) { _, _ in
+                            // FIXME: autocorrectionDisabled really should've disabled these replacements
+                            command = command.replacingOccurrences(of: "—", with: "--")
+                            command = command.replacingOccurrences(of: "”", with: "\"")
+                            command = command.replacingOccurrences(of: "“", with: "\"")
+                            
+                            if command.last?.isNewline ?? false {
+                                model.run(prompt: "\(model.currentDirectory.name) % ", command: command)
+                                command = ""
+                            }
+                        }
+                        .padding(0)
+                    #endif // !SUPPORT_IME
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
             }
@@ -166,6 +190,7 @@ struct ConsoleView: View {
     }
 }
 
+#if !SUPPORT_IME
 /// Renders a command and its output
 struct ConsoleItemView: View {
     @EnvironmentObject private var model: ContentViewModel
@@ -320,6 +345,7 @@ struct ConsoleItemView: View {
         }
     }
 }
+#endif // !SUPPORT_IME
 
 struct CommandPrompt: View {
     @Binding var text: String
