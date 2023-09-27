@@ -330,6 +330,8 @@ struct CommandPrompt: View {
         }
     }
     var onCommit: (() -> Void)?
+    private let timer = Timer.publish(every: 0.5, on: .main, in: .common).autoconnect()
+    @State private var cursorOn = true
     
     init(text: Binding<String>, onCommit: (() -> Void)? = nil) {
         self._text = text
@@ -388,14 +390,20 @@ struct CommandPrompt: View {
             .onAppear {
                 updatePresentation()
             }
+            .onReceive(timer) { _ in
+                cursorOn.toggle()
+                updatePresentation()
+            }
     }
     
     private func updatePresentation() {
         presentation = AttributedString(text.prefix(upTo: cursor))
         
         var cursorCharacter = AttributedString((cursor < text.endIndex) ? String(text[cursor]) : " ")
-        cursorCharacter.foregroundColor = Color(NSColor.textBackgroundColor)
-        cursorCharacter.backgroundColor = .yellow
+        if cursorOn {
+            cursorCharacter.foregroundColor = Color(NSColor.textBackgroundColor)
+            cursorCharacter.backgroundColor = .yellow
+        }
         presentation += cursorCharacter
         
         if cursor < text.endIndex {
