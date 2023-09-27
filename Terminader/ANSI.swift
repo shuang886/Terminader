@@ -169,22 +169,22 @@ extension Color {
         switch fromANSI {
         case 39:      return Color(NSColor.textColor)
         case 49:      return Color(NSColor.textBackgroundColor)
-        case 30, 40:  return Color("ANSIBlackColor")
-        case 31, 41:  return Color("ANSIRedColor")
-        case 32, 42:  return Color("ANSIGreenColor")
-        case 33, 43:  return Color("ANSIYellowColor")
-        case 34, 44:  return Color("ANSIBlueColor")
-        case 35, 45:  return Color("ANSIMagentaColor")
-        case 36, 46:  return Color("ANSICyanColor")
-        case 37, 47:  return Color("ANSIWhiteColor")
-        case 90, 100: return Color("ANSIBrightBlackColor")
-        case 91, 101: return Color("ANSIBrightRedColor")
-        case 92, 102: return Color("ANSIBrightGreenColor")
-        case 93, 103: return Color("ANSIBrightYellowColor")
-        case 94, 104: return Color("ANSIBrightBlueColor")
-        case 95, 105: return Color("ANSIBrightMagentaColor")
-        case 96, 106: return Color("ANSIBrightCyanColor")
-        case 97, 107: return Color("ANSIBrightWhiteColor")
+        case 30, 40:  return .ansiBlack
+        case 31, 41:  return .ansiRed
+        case 32, 42:  return .ansiGreen
+        case 33, 43:  return .ansiYellow
+        case 34, 44:  return .ansiBlue
+        case 35, 45:  return .ansiMagenta
+        case 36, 46:  return .ansiCyan
+        case 37, 47:  return .ansiWhite
+        case 90, 100: return .ansiBrightBlack
+        case 91, 101: return .ansiBrightRed
+        case 92, 102: return .ansiBrightGreen
+        case 93, 103: return .ansiBrightYellow
+        case 94, 104: return .ansiBrightBlue
+        case 95, 105: return .ansiBrightMagenta
+        case 96, 106: return .ansiBrightCyan
+        case 97, 107: return .ansiBrightWhite
         default: return nil
         }
     }
