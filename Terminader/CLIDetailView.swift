@@ -63,7 +63,7 @@ struct CLIDetailView: View {
                             .onAppear {
                                 badgeAnimation()
                             }
-                            .onChange(of: model.selectedFiles) { _ in
+                            .onChange(of: model.selectedFiles) { _, _ in
                                 badgeAnimation()
                             }
                             .allowsHitTesting(false)
@@ -78,7 +78,7 @@ struct CLIDetailView: View {
                             .onAppear {
                                 badgeAnimation()
                             }
-                            .onChange(of: model.selectedFiles) { _ in
+                            .onChange(of: model.selectedFiles) { _, _ in
                                 badgeAnimation()
                             }
                             .allowsHitTesting(false)
@@ -130,7 +130,7 @@ struct ConsoleView: View {
                 ScrollView { // MARK: Command history
                     ForEach($console) { $consoleItem in
                         ConsoleItemView(isStderr: isStderr, isGrouped: true, consoleItem: $consoleItem, terminalFont: terminalFont)
-                            .onChange(of: console) { _ in
+                            .onChange(of: console) { _, _ in
                                 DispatchQueue.main.async {
                                     proxy.scrollTo(bottomID)
                                 }
