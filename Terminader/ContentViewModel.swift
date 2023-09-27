@@ -206,6 +206,9 @@ class ContentViewModel: ObservableObject {
             navigationHistory.append(file)
             currentDirectoryIndex += 1
         }
+        else {
+            NSWorkspace.shared.open(file.url)
+        }
     }
     
     /// Whether back history navigation exists.

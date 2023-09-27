@@ -5,7 +5,6 @@
 //  Created by Steven Huang on 9/20/23.
 //
 
-import AppKit
 import SwiftUI
 import WrappingHStack
 
@@ -54,7 +53,7 @@ struct GUIDetailView: View {
                         })
                         .contextMenu {
                             Button("Open") {
-                                NSWorkspace.shared.open(file.url)
+                                model.open(file)
                             }
                             Button("Get Info") {
                                 model.select(file)

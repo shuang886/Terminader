@@ -5,7 +5,6 @@
 //  Created by Steven Huang on 9/20/23.
 //
 
-import AppKit
 import SwiftUI
 import MarkdownUI
 
@@ -288,7 +287,7 @@ struct ConsoleItemView: View {
                             if let markdownPopupURL {
                                 List {
                                     Button("Open") {
-                                        NSWorkspace.shared.open(markdownPopupURL)
+                                        model.open(File(url: markdownPopupURL))
                                     }
                                     Button("Get Info") {
                                         openWindow(value: File(url: markdownPopupURL))
