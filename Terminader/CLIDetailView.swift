@@ -474,7 +474,7 @@ struct CLIDetailView_Previews: PreviewProvider {
 }
 
 extension Theme {
-    static let terminador = Theme()
+    static let terminador = Theme.basic
         .link {
             UnderlineStyle(.single)
         }
