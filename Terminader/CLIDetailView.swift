@@ -300,9 +300,11 @@ struct ConsoleItemView: View {
                                 List {
                                     Button("Open") {
                                         model.open(File(url: markdownPopupURL))
+                                        isShowingMarkdownPopup = false
                                     }
                                     Button("Get Info") {
                                         openWindow(value: File(url: markdownPopupURL))
+                                        isShowingMarkdownPopup = false
                                     }
                                 }
                                 .buttonStyle(.plain)
