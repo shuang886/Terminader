@@ -19,7 +19,7 @@ struct TerminaderApp: App {
             
             VStack {
                 // FIXME: fill out
-                Text("Info pane")
+                Text(verbatim: "Info pane")
             }
             .navigationTitle("\(title) Info")
         }

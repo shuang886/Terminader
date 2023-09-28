@@ -22,6 +22,7 @@
 		B090726F2ABE1CB900D59DA1 /* main.swift in Sources */ = {isa = PBXBuildFile; fileRef = B090726E2ABE1CB900D59DA1 /* main.swift */; };
 		B09072762ABE1E3100D59DA1 /* cat in Embed Commands */ = {isa = PBXBuildFile; fileRef = B090726C2ABE1CB900D59DA1 /* cat */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
 		B09072792ABE3BC200D59DA1 /* EonilFSEvents in Frameworks */ = {isa = PBXBuildFile; productRef = B09072782ABE3BC200D59DA1 /* EonilFSEvents */; };
+		B0F296342AC4CA55004B6F8A /* Localizable.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = B0F296332AC4CA55004B6F8A /* Localizable.xcstrings */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -73,6 +74,7 @@
 		B06CAEC92ABA304600405BAC /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		B090726C2ABE1CB900D59DA1 /* cat */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = cat; sourceTree = BUILT_PRODUCTS_DIR; };
 		B090726E2ABE1CB900D59DA1 /* main.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = main.swift; sourceTree = "<group>"; };
+		B0F296332AC4CA55004B6F8A /* Localizable.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; path = Localizable.xcstrings; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -125,6 +127,7 @@
 				B04C97972ABB430E0007A34F /* CLIDetailView.swift */,
 				B04C979B2ABCC3400007A34F /* SearchField.swift */,
 				B04C97992ABCA0F50007A34F /* ANSI.swift */,
+				B0F296332AC4CA55004B6F8A /* Localizable.xcstrings */,
 				B04C97A22ABCF1E30007A34F /* scripts */,
 				B06CAEB72ABA170600405BAC /* Assets.xcassets */,
 				B06CAEBC2ABA170600405BAC /* Terminader.entitlements */,
@@ -220,6 +223,7 @@
 			knownRegions = (
 				en,
 				Base,
+				"zh-Hant",
 			);
 			mainGroup = B06CAEA72ABA170500405BAC;
 			packageReferences = (
@@ -244,6 +248,7 @@
 			files = (
 				B06CAEBB2ABA170600405BAC /* Preview Assets.xcassets in Resources */,
 				B04C97A32ABCF1E30007A34F /* scripts in Resources */,
+				B0F296342AC4CA55004B6F8A /* Localizable.xcstrings in Resources */,
 				B06CAEB82ABA170600405BAC /* Assets.xcassets in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

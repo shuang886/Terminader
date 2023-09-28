@@ -86,7 +86,7 @@ struct CLIDetailView: View {
                 }
                 .help("Paste selected items")
                 
-                Picker("", selection: $selectedPane, content: { // MARK: Console/Error segmented control
+                Picker(doNotLocalize, selection: $selectedPane, content: { // MARK: Console/Error segmented control
                     ForEach(CLIPane.allCases, content: { pane in
                         Text(pane.localizedString)
                     })
@@ -95,7 +95,7 @@ struct CLIDetailView: View {
                 .labelsHidden()
                 .clipped()
                 
-                SearchField(prompt: String(localized: "🔍 Filter"), text: $model.consoleFilter)
+                SearchField(prompt: String(localized: "🔍 Search"), text: $model.consoleFilter)
                     .frame(width: 200)
             }
             .padding(8)
@@ -137,7 +137,7 @@ struct ConsoleView: View {
                             }
                     }
                     
-                    Text("")
+                    Text(verbatim: "")
                         .frame(height: 0)
                         .id(bottomID)
                 }
@@ -235,7 +235,7 @@ struct ConsoleItemView: View {
                         if terminationStatus != 0 { // MARK: Termination status
                             Image(systemName: "return.right")
                                 .padding(.leading, 16)
-                            Text("\(consoleItem.terminationStatus ?? 0)")
+                            Text(verbatim: "\(consoleItem.terminationStatus ?? 0)")
                         }
                     }
                     else {

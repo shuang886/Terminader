@@ -66,27 +66,21 @@ struct GUIDetailView: View {
                 }
                 .padding()
             }
+            .onTapGesture {
+                model.deselectAll()
+            }
+            
             HStack { // MARK: Status bar
                 Spacer()
-                let files: String = {
-                    let filesCount = model.currentDirectoryFiles.count.formatted()
-                    if model.selectedFiles.isEmpty {
-                        return "\(filesCount) item(s)" // FIXME: adopt string catalog
-                    }
-                    else {
-                        return "\(model.selectedFiles.count) of \(filesCount) selected"
-                    }
-                }()
                 let availableSpace: String = {
                     if let space = model.availableSpace {
                         let formatter = MeasurementFormatter()
                         formatter.unitOptions = .naturalScale
-                        let spaceString = formatter.string(from: space)
-                        return ", \(spaceString) available"
+                        return formatter.string(from: space)
                     }
-                    return ""
+                    return "0"
                 }()
-                Text(files + availableSpace)
+                Text("\(model.currentDirectoryFiles.count) items, \(availableSpace) available")
                     .frame(alignment: .center)
                 Spacer()
                 Slider(value: $model.iconSize, in: 32...512)

@@ -7,6 +7,8 @@
 
 import SwiftUI
 
+let doNotLocalize = ""
+
 struct ContentView: View {
     @StateObject var model = ContentViewModel()
     /// Whether the window is in GUI mode or CLI mode.
@@ -65,7 +67,7 @@ struct ContentView: View {
             }
             
             ToolbarItem(placement: .navigation) { // MARK: Path components picker
-                Picker("", selection: $model.selectedPathComponent) {
+                Picker(doNotLocalize, selection: $model.selectedPathComponent) {
                     ForEach(0..<model.pathComponentsArray.count, id: \.self) { index in
                         // FIXME: the trailing space prevents the picker from truncating the item
                         Text(model.pathComponentsArray[index].name + " ")
@@ -82,7 +84,7 @@ struct ContentView: View {
                 .help(isGUI ? "Switch to Terminal" : "Switch to graphical interface")
             }
         }
-        .navigationTitle("")
+        .navigationTitle(Text(verbatim: ""))
         .environmentObject(model)
     }
 }

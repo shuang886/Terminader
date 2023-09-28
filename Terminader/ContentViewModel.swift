@@ -256,6 +256,11 @@ class ContentViewModel: ObservableObject {
         selectedFiles.remove(file)
     }
     
+    /// Deselect everything.
+    func deselectAll() {
+        selectedFiles.removeAll()
+    }
+    
     private var stdoutData = Data()
     private var runningTasks: [ UUID : Process ] = [:]
     
