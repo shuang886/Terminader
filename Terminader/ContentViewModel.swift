@@ -162,7 +162,7 @@ class ContentViewModel: ObservableObject {
             stderrConsoleFilterDidChange()
         }
     }
-
+    
     /// Convenience to get the current directory.
     var currentDirectory: File { navigationHistory[currentDirectoryIndex] }
     /// Free space in the disk volume of the current directory.

@@ -358,6 +358,9 @@ struct CommandPrompt: View {
     var onCommit: (() -> Void)?
     private let timer = Timer.publish(every: 0.5, on: .main, in: .common).autoconnect()
     @State private var cursorOn = true
+    @State private var history: [String] = []
+    @State private var historyIndex: Int = 0
+    @State private var savedText: String?
     
     init(text: Binding<String>, onCommit: (() -> Void)? = nil) {
         self._text = text
@@ -387,6 +390,17 @@ struct CommandPrompt: View {
                             updatePresentation()
                         }
                     case .downArrow:
+                        if historyIndex < history.endIndex {
+                            historyIndex += 1
+                            if historyIndex < history.endIndex {
+                                text = history[historyIndex]
+                            }
+                            else {
+                                text = savedText ?? ""
+                                savedText = nil
+                            }
+                            cursor = text.endIndex
+                        }
                         break
                     case .end, .escape, .home:
                         break
@@ -398,14 +412,27 @@ struct CommandPrompt: View {
                         break
                     case .return:
                         self.onCommit?()
+                        
+                        history.append(text)
+                        historyIndex = history.endIndex
+                        savedText = nil
                         text = ""
                         cursor = text.startIndex
                     case .rightArrow:
                         if cursor < text.endIndex {
                             cursor = text.index(after: cursor)
                         }
-                    case .tab, .upArrow:
+                    case .tab:
                         break
+                    case .upArrow:
+                        if historyIndex > history.startIndex {
+                            if savedText == nil {
+                                savedText = text
+                            }
+                            historyIndex -= 1
+                            text = history[historyIndex]
+                            cursor = text.endIndex
+                        }
                     default:
                         text.insert(contentsOf: keyPress.characters, at: cursor)
                         cursor = text.index(after: cursor)
