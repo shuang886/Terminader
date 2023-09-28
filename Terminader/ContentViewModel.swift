@@ -295,6 +295,8 @@ class ContentViewModel: ObservableObject {
         }
         
         switch commandParts[0] {
+        case "":
+            break
         case "cd":
             chdir(commandParts)
         case "deselect":
@@ -421,15 +423,15 @@ class ContentViewModel: ObservableObject {
                                         return rawData
                                     }
                                 }()
-                                unfilteredStdoutConsole[index] = CLIImageOutput(prompt: prompt, command: command, imageData: body)
+                                unfilteredStdoutConsole[index] = CLIImageOutput(prompt: prompt, command: originalCommand, imageData: body)
                             }
                             else if type.hasPrefix("text/"),
                                     let stdoutString = String(data: stdoutData.subdata(in: sol..<stdoutData.endIndex), encoding: .utf8) {
                                 switch type {
                                 case "text/markdown":
-                                    unfilteredStdoutConsole[index] = CLITextOutput(prompt: prompt, command: command, text: stdoutString, format: .markdown)
+                                    unfilteredStdoutConsole[index] = CLITextOutput(prompt: prompt, command: originalCommand, text: stdoutString, format: .markdown)
                                 case "text/plain":
-                                    unfilteredStdoutConsole[index] = CLITextOutput(prompt: prompt, command: command, text: stdoutString)
+                                    unfilteredStdoutConsole[index] = CLITextOutput(prompt: prompt, command: originalCommand, text: stdoutString)
                                 default:
                                     break
                                 }
