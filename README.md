@@ -183,6 +183,12 @@ Terminal, various shells, and many Unix tools is massive. Such a venture would
 also likely need private Apple APIs, and likely will break constantly with new
 macOS versions.
 
+## System Requirements
+
+Intel or Apple Silicon Mac running macOS 14 (Sonoma). If you cannot use
+Sonoma, defining the `SUPPORT_IME` flag and making your own build should still
+mostly work.
+
 ## Known Issues and Excuses
 
 - Interactive programs are not going to work. That includes `vi`, but also
