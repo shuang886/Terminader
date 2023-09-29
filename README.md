@@ -1,4 +1,4 @@
-# <img alt="App icon" src="https://github.com/shuang886/Terminader/assets/140762048/17b8d4f0-fde2-4ff4-9b5d-10c90352bf65" width="64" align="center"> Terminader
+# <img alt="App icon" src="https://github.com/shuang886/Terminader/assets/140762048/7a836c30-16ee-4daf-89b4-f476a7c0234e" width="64" align="center"> Terminader
 
 ## Why are Finder and Terminal separate apps?
 
@@ -9,7 +9,7 @@ applications, but should they be?
 Termina-der, half Terminal and half Finder, is my attempt at answering that
 question.
 
-<img width="779" alt="main UI window with a grid of icons representing the current directory" src="https://github.com/shuang886/Terminader/assets/140762048/8a7aee40-2f5c-41a8-b53a-47dc50b95a3a">
+<img width="779" alt="main UI window with a grid of icons representing the current directory" src="https://github.com/shuang886/Terminader/assets/140762048/0842a118-2e47-4e96-862a-861209f65eb7">
 
 ### Before we proceed
 
@@ -27,7 +27,7 @@ interface as the CLI and its graphical interface as the GUI, so that the words
 The first important realization is that both Finder and Terminal have a strong
 sense of the current working directory, so in Terminader the two interfaces
 share it. Simply use the GUI/CLI button
-<img width="74" alt="screenshot of button to toggle between GUI and CLI modes" src="https://github.com/shuang886/Terminader/assets/140762048/7ee7909f-a16f-4f83-8a2a-6e30db2dd0a2" align="center">
+<img width="74" alt="screenshot of button to toggle between GUI and CLI modes" src="https://github.com/shuang886/Terminader/assets/140762048/23c09b4f-d245-44ba-8cc1-7cd2b9253a59" align="center">
 to flip between the two interfaces to the same current working directory.
 
 But Finder provides a few other ways to move around:
@@ -52,7 +52,7 @@ Terminal is especially powerful if a wildcard (e.g., `A*.txt` to select text
 files that start with "A") suits your needs, and Finder is powerful if your
 choices are somewhat arbitrary.
 
-<img width="219" alt="screenshot of paste button with a badge indicating three items had been selected" src="https://github.com/shuang886/Terminader/assets/140762048/24fbe267-1bbd-4333-bc28-e63a7632a73d">
+<img width="219" alt="screenshot of paste button with a badge indicating three items had been selected" src="https://github.com/shuang886/Terminader/assets/140762048/2d544933-b09d-4893-a0d9-19b75e441144">
 
 Terminader has the best of both by also unifying selections. When you select
 files on the GUI side and then flip to the CLI side, the paste button
@@ -101,7 +101,7 @@ rectangle indicates that the command executed successfully (termination status
 0), while a red rectange indicates an error was encountered, and a cyan
 rectangle indicates the command is still running.
 
-<img width="779" alt="screenshot of CLI with output of a command enclosed in a green rectangle" src="https://github.com/shuang886/Terminader/assets/140762048/42527b1e-55f8-450a-a052-f4c6ae6fc10e">
+<img width="779" alt="screenshot of CLI with output of a command enclosed in a green rectangle" src="https://github.com/shuang886/Terminader/assets/140762048/fb5868bc-5762-4174-9dd0-c7678c926361">
 
 ### So what?
 
@@ -146,7 +146,7 @@ decode the format, it should display on screen.
 
 A new `cat` command uses this ability to display an image in the CLI.
 
-<img width="779" alt="screenshot of cat command outputting an image" src="https://github.com/shuang886/Terminader/assets/140762048/2b0c347d-a422-4bcd-aab5-2f1a703a6006">
+<img width="779" alt="screenshot of cat command outputting an image" src="https://github.com/shuang886/Terminader/assets/140762048/b7cbadef-ca14-4c40-a386-fdd82753e31e">
 
 #### Content-Type: text/markdown
 
