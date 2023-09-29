@@ -80,8 +80,14 @@ struct GUIDetailView: View {
                     }
                     return "0"
                 }()
-                Text("\(model.currentDirectoryFiles.count) items, \(availableSpace) available")
-                    .frame(alignment: .center)
+                if model.selectedFiles.isEmpty {
+                    Text("\(model.currentDirectoryFiles.count) items, \(availableSpace) available")
+                        .frame(alignment: .center)
+                }
+                else {
+                    Text("\(model.selectedFiles.count) of \(model.currentDirectoryFiles.count) selected, \(availableSpace) available")
+                        .frame(alignment: .center)
+                }
                 Spacer()
                 Slider(value: $model.iconSize, in: 32...512)
                     .frame(maxWidth: 100)

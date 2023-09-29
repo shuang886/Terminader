@@ -55,6 +55,22 @@
         }
       }
     },
+    "%lld of %lld selected, %@ available" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$lld of %2$lld selected, %3$@ available"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "已選取 %1$lld 個項目（共 %2$lld 個），%3$@ 可用"
+          }
+        }
+      }
+    },
     "🔍 Search" : {
       "localizations" : {
         "zh-Hant" : {
