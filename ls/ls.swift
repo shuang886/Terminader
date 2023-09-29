@@ -17,12 +17,20 @@ struct ls: ParsableCommand {
     @Argument(help: "Files to list")
     var files: [String] = ["."]
     
-    private func listHeader() {
-        print("| Permissions | Links | Owner | Group | Size | Date | Name |")
-        print("| :---------: | ----: | ----- | ----- | ---: | ---: | ---- |")
+    private var mimeHeaderPrinted = false
+    private var tableHeaderPrinted = false
+    
+    mutating private func listHeader() {
+        if !tableHeaderPrinted {
+            print("""
+            | Permissions | Links | Owner | Group | Size | Date | Name |
+            | :---------: | ----: | ----- | ----- | ---: | ---: | ---- |
+            """)
+            tableHeaderPrinted = true
+        }
     }
     
-    private func listFile(_ content: URL) throws {
+    private mutating func listFile(_ content: URL) throws {
         let fileManager = FileManager.default
         let dateFormatter = DateFormatter()
         dateFormatter.dateStyle = .short
@@ -93,6 +101,7 @@ struct ls: ParsableCommand {
         let name = "[\(fileManager.displayName(atPath: contentPath))](\(content))" +
             (isDirectory ? "/" : "")
         
+        listHeader()
         print("| \(permissionsString) | \(links) | \(owner) | \(group) | \(size) |  \(date) | \(name) |")
     }
     
@@ -100,21 +109,25 @@ struct ls: ParsableCommand {
         let fileManager = FileManager.default
         let currentDirectory = URL(filePath: fileManager.currentDirectoryPath)
         
-        print("""
-        MIME-Version: 1.0
-        Content-Type: text/markdown
-        
-        """)
-        
         do {
-            listHeader()
             for file in files {
                 let url = file.hasPrefix("/") ? URL(filePath: file) : currentDirectory.appending(path: file).standardized
                 let path = url.path(percentEncoded: false)
                 
                 var isDirectory: ObjCBool = false
                 if fileManager.fileExists(atPath: path, isDirectory: &isDirectory) {
+                    if !mimeHeaderPrinted {
+                        print("""
+                        MIME-Version: 1.0
+                        Content-Type: text/markdown
+                        
+                        """)
+                        mimeHeaderPrinted = true
+                    }
+                    
                     if isDirectory.boolValue {
+                        print("\n### \(file):")
+                        tableHeaderPrinted = false
                         var contents = try fileManager.contentsOfDirectory(at: url, includingPropertiesForKeys: [])
                         if !all {
                             contents = contents.filter { !$0.lastPathComponent.hasPrefix(".") }
@@ -129,30 +142,13 @@ struct ls: ParsableCommand {
                         try listFile(url)
                     }
                 }
+                else {
+                    let appName = (CommandLine.arguments[0] as NSString).lastPathComponent
+                    fputs("\(appName): \(file): No such file or directory\n", stderr)
+                }
             }
         } catch {
             ls.exit(withError: error)
-        }
-    }
-}
-
-enum StringFormatAlignment {
-    case left, center, right
-}
-
-extension String {
-    func formatted(width: Int = 0, alignment: StringFormatAlignment = .left) -> String {
-        let selfCount = self.count
-        guard width > selfCount else { return self }
-        
-        switch alignment {
-        case .left:
-            return self + String(repeating: " ", count: width - selfCount)
-        case .right:
-            return String(repeating: " ", count: width - selfCount) + self
-        case .center:
-            let left = (width - selfCount) / 2
-            return String(repeating: " ", count: left) + self + String(repeating: " ", count: width - left)
         }
     }
 }
