@@ -15,6 +15,7 @@
 		B058C51A2AC5FB31002EDD66 /* ls in Embed Commands */ = {isa = PBXBuildFile; fileRef = B058C5152AC5FAD2002EDD66 /* ls */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
 		B058C51D2AC5FB67002EDD66 /* ls.swift in Sources */ = {isa = PBXBuildFile; fileRef = B058C51C2AC5FB67002EDD66 /* ls.swift */; };
 		B058C5232AC5FFB7002EDD66 /* ArgumentParser in Frameworks */ = {isa = PBXBuildFile; productRef = B058C5222AC5FFB7002EDD66 /* ArgumentParser */; };
+		B058C5252AC76890002EDD66 /* CommandPrompt.swift in Sources */ = {isa = PBXBuildFile; fileRef = B058C5242AC76890002EDD66 /* CommandPrompt.swift */; };
 		B06CAEB42ABA170500405BAC /* TerminaderApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = B06CAEB32ABA170500405BAC /* TerminaderApp.swift */; };
 		B06CAEB62ABA170500405BAC /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B06CAEB52ABA170500405BAC /* ContentView.swift */; };
 		B06CAEB82ABA170600405BAC /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = B06CAEB72ABA170600405BAC /* Assets.xcassets */; };
@@ -86,6 +87,7 @@
 		B04C97A22ABCF1E30007A34F /* scripts */ = {isa = PBXFileReference; lastKnownFileType = folder; path = scripts; sourceTree = "<group>"; };
 		B058C5152AC5FAD2002EDD66 /* ls */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = ls; sourceTree = BUILT_PRODUCTS_DIR; };
 		B058C51C2AC5FB67002EDD66 /* ls.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ls.swift; sourceTree = "<group>"; };
+		B058C5242AC76890002EDD66 /* CommandPrompt.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CommandPrompt.swift; sourceTree = "<group>"; };
 		B06CAEB02ABA170500405BAC /* Terminader.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Terminader.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		B06CAEB32ABA170500405BAC /* TerminaderApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TerminaderApp.swift; sourceTree = "<group>"; };
 		B06CAEB52ABA170500405BAC /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
@@ -173,6 +175,7 @@
 				B06CAEC72ABA251800405BAC /* ContentViewModel.swift */,
 				B04C97952ABB42C10007A34F /* GUIDetailView.swift */,
 				B04C97972ABB430E0007A34F /* CLIDetailView.swift */,
+				B058C5242AC76890002EDD66 /* CommandPrompt.swift */,
 				B04C979B2ABCC3400007A34F /* SearchField.swift */,
 				B04C97992ABCA0F50007A34F /* ANSI.swift */,
 				B0F296332AC4CA55004B6F8A /* Localizable.xcstrings */,
@@ -348,6 +351,7 @@
 				B04C979C2ABCC3400007A34F /* SearchField.swift in Sources */,
 				B04C97982ABB430E0007A34F /* CLIDetailView.swift in Sources */,
 				B06CAEC82ABA251800405BAC /* ContentViewModel.swift in Sources */,
+				B058C5252AC76890002EDD66 /* CommandPrompt.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

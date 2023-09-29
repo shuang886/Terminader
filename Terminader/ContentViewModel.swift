@@ -466,6 +466,12 @@ class ContentViewModel: ObservableObject {
         }
     }
     
+    func interrupt() {
+        for task in runningTasks.values {
+            task.terminate()
+        }
+    }
+    
     func stop(_ id: UUID) {
         if let task = runningTasks[id] {
             task.terminate()
